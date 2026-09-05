@@ -37,7 +37,7 @@ def run_bash(command: str) -> str:
     except Exception as e:
         return f"命令执行出错: {str(e)}"
 
-def write_bash(file_path: str, content: str) -> str:
+def write_file(file_path: str, content: str) -> str:
     """用于创建新文件或完全重写（覆盖）已有文件"""
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -46,7 +46,7 @@ def write_bash(file_path: str, content: str) -> str:
     except Exception as e:
         return f"写入出错: {e}"
 
-def read_bash(file_path: str) -> str:
+def read_file(file_path: str) -> str:
     """用于读取文件内容"""
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -54,11 +54,11 @@ def read_bash(file_path: str) -> str:
     except Exception as e:
         return f"读取出错: {e}"
 
-def edit_bash(file_path: str, old_text: str, new_text: str) -> str:
+def edit_file(file_path: str, old_text: str, new_text: str) -> str:
     """用于局部修改已有文件（替换特定文本）"""
     import os
     if not os.path.exists(file_path):
-        return f"编辑失败：文件 {file_path} 不存在，请先使用 write_bash 工具创建。"
+        return f"编辑失败：文件 {file_path} 不存在，请先使用 write_file 工具创建。"
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = f.read()
@@ -104,7 +104,7 @@ tools = [
     {
         "type": "function",
         "function": {
-            "name": "write_bash",
+            "name": "write_file",
             "description": "用于创建新文件，或将已有文件完全重写（全量覆盖）。注意：这会替换掉目标文件的所有原有内容！",
             "parameters": {
                 "type": "object",
@@ -119,7 +119,7 @@ tools = [
     {
         "type": "function",
         "function": {
-            "name": "read_bash",
+            "name": "read_file",
             "description": "用于读取文件内容",
             "parameters": {
                 "type": "object",
@@ -133,7 +133,7 @@ tools = [
     {
         "type": "function",
         "function": {
-            "name": "edit_bash",
+            "name": "edit_file",
             "description": "用于对已有文件进行局部修改（打补丁）。通过精准匹配旧文本并替换为新文本来实现修改。",
             "parameters": {
                 "type": "object",
@@ -165,12 +165,44 @@ tools = [
 # 用于将工具名 (name) 映射到对应 Python 函数对象 (function) 的字典
 available_functions = {
     "run_bash": run_bash,
-    "write_bash": write_bash,
-    "read_bash": read_bash,
-    "edit_bash": edit_bash,
+    "write_file": write_file,
+    "read_file": read_file,
+    "edit_file": edit_file,
     "glob_bash": glob_bash
 }
 
+def check_tool_permission(func_name: str, args: dict) -> tuple[bool, str]:
+    """
+    在执行工具函数前进行权限判断。只返回是否允许执行的布尔值及拦截信息。
+    1. 拦截高危命令
+    2. 对读写文件类工具以及敏感终端指令进行用户授权确认
+    """
+    args_str = json.dumps(args, ensure_ascii=False).lower()
+    
+    # a. 高危命令集合：禁止常见格式化磁盘、删除系统核心文件等
+    forbidden_keywords = ['format ', 'rm -rf /', 'mkfs', 'del /f /s /q c:\\', 'rmdir /s /q c:\\']
+    if any(danger in args_str for danger in forbidden_keywords):
+        print("\033[31m[系统拦截] 检测到高危操作，已拒绝执行。\033[0m")
+        return False, "执行失败：系统已拦截高危操作（如格式化磁盘、删除系统核心文件等）。"
+        
+    # 需要询问用户的集合（包含 edit, write, read 以及 run_bash 中的文件修改/删除等敏感指令）
+    ask_keywords = ['edit', 'write', 'read', 'rm ', 'del ', 'rmdir', 'erase', 'move ', 'mv ', 'rename', 'ren ', 'remove-item']
+    
+    # b. 规则匹配: 函数名和 cmd 内容同时判断
+    cmd_str = str(args.get("command", "")).lower()
+    check_target = f"{func_name} {cmd_str}"
+    
+    if any(kw in check_target for kw in ask_keywords):
+        # c. 用户审批, 询问用户获取权限 "yes/no"
+        user_approval = input(f"\033[36m工具 {func_name} 请求执行。是否允许？(yes/no): \033[0m").strip().lower()
+        if user_approval == "yes":
+            return True, ""
+        else:
+            print("\033[33m[用户拒绝] 没获取到权限，已跳过该工具执行。\033[0m")
+            return False, "用户不允许执行该操作。"
+            
+    # 其他工具直接允许
+    return True, ""
 def chat_with_llm(user_input: str, messages: list = None) -> list:
     """
     供外部调用的核心函数，用于处理用户输入并与 LLM 进行交流。
@@ -215,7 +247,12 @@ def chat_with_llm(user_input: str, messages: list = None) -> list:
                     args = json.loads(tool_call.function.arguments)
                     # 打印黄色字体的工具调用信息（带参数）
                     print(f"\033[33m[工具调用] AI 决定执行: {func_name} | 参数: {args}\033[0m")
-                    tool_result = str(func_to_call(**args))
+                    
+                    is_allowed, deny_msg = check_tool_permission(func_name, args)
+                    if is_allowed:
+                        tool_result = str(func_to_call(**args))
+                    else:
+                        tool_result = deny_msg
                     
                     # 在终端也打印一下工具的返回结果（使用灰色，并限制长度防刷屏）
                     preview_result = tool_result if len(tool_result) < 300 else tool_result[:300] + " ...[内容太长已截断]"
