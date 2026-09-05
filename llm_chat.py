@@ -1,6 +1,8 @@
 import os
 import json
+import inspect
 import subprocess
+from dataclasses import dataclass, field
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -25,6 +27,7 @@ def run_bash(command: str) -> str:
             shell=True,
             capture_output=True,
             text=True,
+            errors='replace', # 防止 Windows 下某些命令由于输出特殊字符导致解码报错
             timeout=60 # 防止某些命令卡死
         )
         
@@ -171,38 +174,142 @@ available_functions = {
     "glob_bash": glob_bash
 }
 
-def check_tool_permission(func_name: str, args: dict) -> tuple[bool, str]:
+def get_tool_function(func_name: str):
     """
-    在执行工具函数前进行权限判断。只返回是否允许执行的布尔值及拦截信息。
-    1. 拦截高危命令
-    2. 对读写文件类工具以及敏感终端指令进行用户授权确认
+    根据工具名称从可用工具函数映射表中获取对应的函数对象。
+    :param func_name: 工具名称
+    :return: 对应的函数对象，若未找到则返回 None
     """
-    args_str = json.dumps(args, ensure_ascii=False).lower()
+    return available_functions.get(func_name)
+
+# --- 结构化工具调用定义 ---
+@dataclass
+class ToolCall:
+    """
+    结构化工具调用对象：将 LLM 原始调用反序列化为规整的结构
+    """
+    id: str
+    name: str
+    args: dict = field(default_factory=dict)
+    result: str = ""
+
+    @classmethod
+    def from_raw(cls, raw_tool_call) -> "ToolCall":
+        """从 LLM 返回的原始 tool_call 中反序列化构建结构化实例"""
+        try:
+            parsed_args = json.loads(raw_tool_call.function.arguments)
+        except Exception:
+            parsed_args = {}
+        return cls(
+            id=raw_tool_call.id,
+            name=raw_tool_call.function.name,
+            args=parsed_args
+        )
+
+# --- HOOK 流程定义 ---
+# HOOK 表：类似于函数表索引函数，通过阶段名索引指定一系列 HOOK 函数（以列表形式存储）
+hook_table = {
+    "before_loop": [],       # a. 用户输入后没进工具死循环前
+    "before_tool": [],       # b. 每次循环执行工具前
+    "after_tool": [],        # c. 每次循环执行工具后
+    "after_loop": []         # d. 退出循环停止时
+}
+
+def register_hook(stage: str, hook_func: callable) -> None:
+    """
+    向指定阶段注册 HOOK 函数。
+    :param stage: 阶段名 ('before_loop', 'before_tool', 'after_tool', 'after_loop')
+    :param hook_func: 要注册的函数对象
+    """
+    if stage not in hook_table:
+        hook_table[stage] = []
+    if hook_func not in hook_table[stage]:
+        hook_table[stage].append(hook_func)
+
+def unregister_hook(stage: str, hook_func: callable) -> bool:
+    """
+    从指定阶段注销（反注册）已注册的 HOOK 函数。
+    :param stage: 阶段名 ('before_loop', 'before_tool', 'after_tool', 'after_loop')
+    :param hook_func: 要移除的函数对象
+    :return: 移除成功返回 True，不存在则返回 False
+    """
+    if stage in hook_table and hook_func in hook_table[stage]:
+        hook_table[stage].remove(hook_func)
+        return True
+    return False
+
+# 阶段 a 的 Hook: 打印玩家输入的日志
+def hook_log_user_input(user_input: str, messages: list, **kwargs):
+    """阶段 a: 打印玩家输入的日志"""
+    print(f"\033[94m[HOOK: before_loop] 记录用户输入: {user_input}\033[0m")
+
+# 阶段 b 的 Hook: 接收结构化 ToolCall，进行权限校验与高危拦截
+def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
+    """阶段 b: 执行工具前的权限判断与高危拦截"""
+    print(f"\033[94m[HOOK: before_tool] 开始工具权限校验 -> {tool.name}\033[0m")
+    args_str = json.dumps(tool.args, ensure_ascii=False).lower()
     
-    # a. 高危命令集合：禁止常见格式化磁盘、删除系统核心文件等
+    # 高危命令集合：禁止常见格式化磁盘、删除系统核心文件等
     forbidden_keywords = ['format ', 'rm -rf /', 'mkfs', 'del /f /s /q c:\\', 'rmdir /s /q c:\\']
     if any(danger in args_str for danger in forbidden_keywords):
-        print("\033[31m[系统拦截] 检测到高危操作，已拒绝执行。\033[0m")
         return False, "执行失败：系统已拦截高危操作（如格式化磁盘、删除系统核心文件等）。"
         
     # 需要询问用户的集合（包含 edit, write, read 以及 run_bash 中的文件修改/删除等敏感指令）
     ask_keywords = ['edit', 'write', 'read', 'rm ', 'del ', 'rmdir', 'erase', 'move ', 'mv ', 'rename', 'ren ', 'remove-item']
     
-    # b. 规则匹配: 函数名和 cmd 内容同时判断
-    cmd_str = str(args.get("command", "")).lower()
-    check_target = f"{func_name} {cmd_str}"
+    # 规则匹配: 函数名和 cmd 内容同时判断
+    cmd_str = str(tool.args.get("command", "")).lower()
+    check_target = f"{tool.name} {cmd_str}"
     
     if any(kw in check_target for kw in ask_keywords):
-        # c. 用户审批, 询问用户获取权限 "yes/no"
-        user_approval = input(f"\033[36m工具 {func_name} 请求执行。是否允许？(yes/no): \033[0m").strip().lower()
+        user_approval = input(f"\033[36m工具 {tool.name} 请求执行。是否允许？(yes/no): \033[0m").strip().lower()
         if user_approval == "yes":
             return True, ""
         else:
-            print("\033[33m[用户拒绝] 没获取到权限，已跳过该工具执行。\033[0m")
             return False, "用户不允许执行该操作。"
             
-    # 其他工具直接允许
     return True, ""
+
+# 阶段 c 的 Hook: 接收结构化 ToolCall，打印执行结果日志
+def hook_log_tool_result(tool: ToolCall, **kwargs):
+    """阶段 c: 打印工具执行返回结果的日志"""
+    preview_result = tool.result if len(tool.result) < 300 else tool.result[:300] + " ...[内容太长已截断]"
+    print(f"\033[94m[HOOK: after_tool] 工具 {tool.name} 执行完成 | 结果: {preview_result}\033[0m")
+
+# 阶段 d 的 Hook: 打印最终输出的内容日志以及使用工具的总数统计
+def hook_log_final_output_and_stats(final_content: str, tool_count: int, messages: list, **kwargs):
+    """阶段 d: 打印最终输出的内容日志以及使用工具的总数"""
+    print(f"\033[94m[HOOK: after_loop] 本轮交互结束，共调用工具 {tool_count} 次\033[0m")
+    if final_content:
+        print(f"\n[LLM]:\n{final_content}")
+
+# 通过普通调用写法进行注册（按阶段注册功能性 Hook 函数）
+register_hook("before_loop", hook_log_user_input)
+register_hook("before_tool", hook_check_tool_permission)
+register_hook("after_tool", hook_log_tool_result)
+register_hook("after_loop", hook_log_final_output_and_stats)
+
+# 单独封装处理 HOOK 的执行函数
+def trigger_hooks(stage: str, **kwargs) -> list:
+    """
+    HOOK 处理函数：从 hook_table 索引指定阶段并顺序执行其注册的 HOOK 列表，并返回各 HOOK 的返回值列表
+    """
+    hook_funcs = hook_table.get(stage, [])
+    results = []
+    for hook in hook_funcs:
+        try:
+            sig = inspect.signature(hook)
+            if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in sig.parameters.values()):
+                res = hook(**kwargs)
+            else:
+                filtered_args = {k: v for k, v in kwargs.items() if k in sig.parameters}
+                res = hook(**filtered_args)
+            if res is not None:
+                results.append(res)
+        except Exception as e:
+            print(f"\033[31m[HOOK 执行异常] 阶段 {stage} 函数 {getattr(hook, '__name__', str(hook))} 失败: {e}\033[0m")
+    return results
+
 def chat_with_llm(user_input: str, messages: list = None) -> list:
     """
     供外部调用的核心函数，用于处理用户输入并与 LLM 进行交流。
@@ -212,6 +319,12 @@ def chat_with_llm(user_input: str, messages: list = None) -> list:
         
     # 将用户的输入添加到消息列表中
     messages.append({"role": "user", "content": user_input})
+
+    # a. 用户输入后没进工具死循环前 (通过 hook 打印玩家输入日志等)
+    trigger_hooks("before_loop", user_input=user_input, messages=messages)
+
+    tool_count = 0
+    final_content = ""
 
     # 1. 该函数内部是一个死循环，专门处理可能连续调用的工具流程
     while True:
@@ -231,55 +344,74 @@ def chat_with_llm(user_input: str, messages: list = None) -> list:
         # 将 LLM 的回复记录到上下文中（包括它发出的 tool_calls 信息）
         messages.append(message)
 
-        # 2. 判断：如果没有调用工具，则停止循环（正常回复）
+        # 2. 判断：如果没有调用工具，则记录最后回复内容并停止循环
         if not message.tool_calls:
-            print(f"\n[LLM]:\n{message.content}")
+            final_content = message.content or ""
             break
 
         # 3. 当存在调用工具时，执行该工具并将结果塞入 Content 中，等待下次循环发送
-        for tool_call in message.tool_calls:
-            func_name = tool_call.function.name
-            func_to_call = available_functions.get(func_name)
+        for raw_tool_call in message.tool_calls:
+            # 将原始工具调用反序列化为规整的结构化对象
+            tool = ToolCall.from_raw(raw_tool_call)
+            func_to_call = get_tool_function(tool.name)
             
             if func_to_call:
-                # 解析 LLM 传过来的工具参数，将其解包作为 kwargs 传入对应的函数
-                try:
-                    args = json.loads(tool_call.function.arguments)
-                    # 打印黄色字体的工具调用信息（带参数）
-                    print(f"\033[33m[工具调用] AI 决定执行: {func_name} | 参数: {args}\033[0m")
-                    
-                    is_allowed, deny_msg = check_tool_permission(func_name, args)
-                    if is_allowed:
-                        tool_result = str(func_to_call(**args))
-                    else:
-                        tool_result = deny_msg
-                    
-                    # 在终端也打印一下工具的返回结果（使用灰色，并限制长度防刷屏）
-                    preview_result = tool_result if len(tool_result) < 300 else tool_result[:300] + " ...[内容太长已截断]"
-                    print(f"\033[90m  └─ [工具返回]: {preview_result}\033[0m")
-                except Exception as e:
-                    tool_result = f"工具 {func_name} 执行出错: {str(e)}"
+                print(f"\033[33m[工具调用] AI 决定执行: {tool.name} | 参数: {tool.args}\033[0m")
+
+                # b. 每次循环执行工具前 (将结构化的 tool 传递给 hook)
+                hook_results = trigger_hooks("before_tool", tool=tool, messages=messages)
+                
+                is_allowed = True
+                deny_msg = ""
+                for res in hook_results:
+                    if isinstance(res, tuple) and len(res) == 2 and isinstance(res[0], bool):
+                        is_allowed, deny_msg = res
+                        if not is_allowed:
+                            break
+                
+                if is_allowed:
+                    try:
+                        tool_count += 1
+                        tool.result = str(func_to_call(**tool.args))
+                    except Exception as e:
+                        tool.result = f"工具 {tool.name} 执行出错: {str(e)}"
+                else:
+                    tool.result = deny_msg
+                
+                # c. 每次循环执行工具后 (将带结果的结构化 tool 传递给 hook)
+                trigger_hooks("after_tool", tool=tool, messages=messages)
             else:
-                tool_result = f"未找到名为 {func_name} 的工具，无法执行。"
+                tool.result = f"未找到名为 {tool.name} 的工具，无法执行。"
                 
             # 将工具执行结果作为 'tool' 角色返回给 LLM
             messages.append({
                 "role": "tool",
-                "tool_call_id": tool_call.id,
-                "name": tool_call.function.name,
-                "content": tool_result
+                "tool_call_id": tool.id,
+                "name": tool.name,
+                "content": tool.result
             })
                 
+    # d. 退出循环停止时 (通过 hook 打印最后输出的内容日志以及使用工具的总数)
+    trigger_hooks("after_loop", messages=messages, final_content=final_content, tool_count=tool_count)
     return messages
 
 if __name__ == "__main__":
-    print("=== LLM 终端助手已启动 ===")
+    print("=== LLM 终端助手已启动 (输入 exit 或 quit 退出) ===")
     print("已加载配置 URL:", BASE_URL)
     
     chat_history = []
     
-    # 单次调用代码：移除了外层的无限循环
-    user_msg = input("\n[User]: ")
-    if user_msg.strip():
-        # 外部调用该函数
-        chat_history = chat_with_llm(user_msg, chat_history)
+    # 外层用户输入死循环：支持多轮持续交互
+    while True:
+        try:
+            user_msg = input("\n[User]: ")
+            if not user_msg.strip():
+                continue
+            if user_msg.strip().lower() in ["exit", "quit", "q"]:
+                print("程序已退出。")
+                break
+            # 外部调用该函数进行交互并累积历史记录
+            chat_history = chat_with_llm(user_msg, chat_history)
+        except (KeyboardInterrupt, EOFError):
+            print("\n检测到中断信号，程序已退出。")
+            break
