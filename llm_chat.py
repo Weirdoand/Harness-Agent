@@ -5,6 +5,8 @@ import subprocess
 from dataclasses import dataclass, field
 from dotenv import load_dotenv
 from openai import OpenAI
+import yaml
+from pathlib import Path
 
 # 加载 .env 文件中的环境变量
 load_dotenv()
@@ -18,6 +20,57 @@ client = OpenAI(
     api_key=API_KEY,
     base_url=BASE_URL
 )
+
+class SkillLoader:
+    def __init__(self):
+        self.skills = {}
+
+    def scan(self, path: Path):
+        """扫描指定路径下的所有 skill"""
+        if not path.exists() or not path.is_dir():
+            return
+        for skill_dir in path.iterdir():
+            if skill_dir.is_dir():
+                skill_md_path = skill_dir / "SKILL.md"
+                if skill_md_path.exists():
+                    self._parse_skill(skill_md_path)
+
+    def _parse_skill(self, file_path: Path):
+        try:
+            content = file_path.read_text(encoding='utf-8')
+            if content.startswith('---'):
+                parts = content.split('---', 2)
+                if len(parts) >= 3:
+                    frontmatter = parts[1]
+                    metadata = yaml.safe_load(frontmatter)
+                    name = metadata.get('name')
+                    description = metadata.get('description', '')
+                    if name:
+                        self.skills[name] = {
+                            "name": name,
+                            "description": description,
+                            "content": content
+                        }
+        except Exception as e:
+            print(f"解析技能文件出错 {file_path}: {e}")
+
+    def load_skill(self, skill_name: str) -> str:
+        """加载指定技能的SKILL.md"""
+        if skill_name in self.skills:
+            return self.skills[skill_name]['content']
+        return f"技能 {skill_name} 未找到。"
+
+    def get_skill_prompt(self) -> str:
+        """加载技能的提示词 (只包含name + description)"""
+        if not self.skills:
+            return ""
+        prompt = "可用技能列表 (通过 load_skill 详细了解):\n"
+        for name, info in self.skills.items():
+            prompt += f"- {name}: {info['description'].strip()}\n"
+        return prompt
+
+SKILL_LOADER = SkillLoader()
+SKILL_LOADER.scan(Path.cwd() / "skills")
 
 def run_bash(command: str) -> str:
     try:
@@ -86,8 +139,13 @@ def glob_bash(pattern: str) -> str:
         return f"查找出错: {e}"
 
 # --- 系统角色 Prompt 定义 ---
-SYSTEM_PROMPT = "我是一名代码工程师, 擅长将复杂任务拆分为多个小任务按步骤依次执行, 使用 todo_write 去规划你的子任务步骤, 使用 task 派发 subagent 完成需求, 或者自己完成需求, 并更新状态"
-SUBAGENT_SYSTEM_PROMPT = "你是一个子任务执行助手。完成指定派发下来的 task 并将答案返回上去"
+BASE_PROMPT = ""
+skill_prompt = SKILL_LOADER.get_skill_prompt()
+if skill_prompt:
+    BASE_PROMPT += f"\n\n{skill_prompt}\n这些skill是可用的skill, 如果有相关的部分优先使用skill\n"
+
+SYSTEM_PROMPT = "我是一名代码工程师, 擅长将复杂任务拆分为多个小任务按步骤依次执行, 使用 todo_write 去规划你的子任务步骤, 使用 task 派发 subagent 完成需求, 或者自己完成需求, 并更新状态" + BASE_PROMPT
+SUBAGENT_SYSTEM_PROMPT = "你是一个子任务执行助手。完成指定派发下来的 task 并将答案返回上去" + BASE_PROMPT
 
 # --- 阶段任务管理定义 ---
 class TODOManager:
@@ -267,6 +325,20 @@ BASE_TOOLS = [
                 "required": ["todos"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "load_skill",
+            "description": "加载指定技能的 SKILL.md 内容，获取技能的详细指南和约束。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "skill_name": {"type": "string", "description": "技能名称"}
+                },
+                "required": ["skill_name"]
+            }
+        }
     }
 ]
 
@@ -303,7 +375,8 @@ BASE_FUNCTIONS = {
     "read_file": read_file,
     "edit_file": edit_file,
     "glob_bash": glob_bash,
-    "todo_write": todo_write
+    "todo_write": todo_write,
+    "load_skill": SKILL_LOADER.load_skill
 }
 
 # 专门给 subagent 使用的函数集合
