@@ -86,7 +86,8 @@ def glob_bash(pattern: str) -> str:
         return f"查找出错: {e}"
 
 # --- 系统角色 Prompt 定义 ---
-SYSTEM_PROMPT = "我是一名代码工程师, 擅长将复杂任务拆分为多个小任务按步骤依次执行, 使用 todo_write 去规划你的子任务步骤, 并更新状态"
+SYSTEM_PROMPT = "我是一名代码工程师, 擅长将复杂任务拆分为多个小任务按步骤依次执行, 使用 todo_write 去规划你的子任务步骤, 使用 task 派发 subagent 完成需求, 或者自己完成需求, 并更新状态"
+SUBAGENT_SYSTEM_PROMPT = "你是一个子任务执行助手。完成指定派发下来的 task 并将答案返回上去"
 
 # --- 阶段任务管理定义 ---
 class TODOManager:
@@ -157,8 +158,8 @@ def todo_write(todos: list = None, **kwargs) -> str:
     # 2. update的最后直接调用log, 不要再todo_write来调用
     return todo_manager.update(todos=todos, **kwargs)
 
-# 定义供 LLM 调用的工具 Schema
-tools = [
+# 定义供 LLM 调用的基础工具 Schema
+BASE_TOOLS = [
     {
         "type": "function",
         "function": {
@@ -269,8 +270,34 @@ tools = [
     }
 ]
 
-# 用于将工具名 (name) 映射到对应 Python 函数对象 (function) 的字典
-available_functions = {
+task_schema = {
+    "type": "function",
+    "function": {
+        "name": "task",
+        "description": "派发子任务给 subagent 执行。适用于独立或复杂的子需求。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "instruction": {"type": "string", "description": "派发给子代理的具体需求指令"}
+            },
+            "required": ["instruction"]
+        }
+    }
+}
+
+# 专门给 subagent 使用的工具集合
+SUB_TOOLS = list(BASE_TOOLS)
+
+# 供父级 Agent 调用的完整工具集合（包含派发子代理的 task 工具）
+TOOLS = BASE_TOOLS + [task_schema]
+
+def task(instruction: str, **kwargs) -> str:
+    """创建一个子执行代理完成子任务"""
+    # run_subagent 将在稍后定义，此处做个占位或直接调用
+    return run_subagent(instruction)
+
+# 基础的函数映射（供 subagent 使用，无 task 工具）
+BASE_FUNCTIONS = {
     "run_bash": run_bash,
     "write_file": write_file,
     "read_file": read_file,
@@ -279,13 +306,13 @@ available_functions = {
     "todo_write": todo_write
 }
 
-def get_tool_function(func_name: str):
-    """
-    根据工具名称从可用工具函数映射表中获取对应的函数对象。
-    :param func_name: 工具名称
-    :return: 对应的函数对象，若未找到则返回 None
-    """
-    return available_functions.get(func_name)
+# 专门给 subagent 使用的函数集合
+SUB_FUNCTIONS = dict(BASE_FUNCTIONS)
+
+# 完整的函数映射（供父级使用，包含 task 工具）
+FUNCTIONS = dict(BASE_FUNCTIONS)
+FUNCTIONS["task"] = task
+
 
 # --- 结构化工具调用定义 ---
 @dataclass
@@ -455,7 +482,100 @@ def trigger_hooks(stage: str, **kwargs) -> list:
             print(f"\033[31m[HOOK 执行异常] 阶段 {stage} 函数 {getattr(hook, '__name__', str(hook))} 失败: {e}\033[0m")
     return results
 
-def chat_with_llm(messages: list = None) -> list:
+def execute_function(tool: ToolCall, available_funcs: dict, messages: list) -> str:
+    """执行单个工具调用并处理权限校验和错误捕获"""
+    func_to_call = available_funcs.get(tool.name)
+    if not func_to_call:
+        return f"未找到名为 {tool.name} 的工具，无法执行。"
+    
+    # 触发 before_tool 钩子
+    hook_results = trigger_hooks("before_tool", tool=tool, messages=messages)
+    
+    is_allowed = True
+    deny_msg = ""
+    for res in hook_results:
+        if isinstance(res, tuple) and len(res) == 2 and isinstance(res[0], bool):
+            is_allowed, deny_msg = res
+            if not is_allowed:
+                break
+    
+    if is_allowed:
+        try:
+            result = str(func_to_call(**tool.args))
+        except Exception as e:
+            result = f"工具 {tool.name} 执行出错: {str(e)}"
+    else:
+        result = deny_msg
+        
+    tool.result = result
+    # 触发 after_tool 钩子
+    trigger_hooks("after_tool", tool=tool, messages=messages)
+    return result
+
+def handle_tool_call(raw_tool_call, available_funcs: dict, messages: list) -> bool:
+    """
+    处理单个工具调用并将其结果附加到消息队列中
+    返回本次是否调用了 todo_write
+    """
+    tool = ToolCall.from_raw(raw_tool_call)
+    
+    result = execute_function(tool, available_funcs, messages)
+    
+    called_todo = False
+    if tool.name == "todo_write" and "执行出错" not in result and "不允许执行" not in result:
+        called_todo = True
+        
+    messages.append({
+        "role": "tool",
+        "tool_call_id": tool.id,
+        "name": tool.name,
+        "content": tool.result
+    })
+    return called_todo
+
+def run_subagent(instruction: str, **kwargs) -> str:
+    """
+    执行一个子代理任务，最多执行30轮
+    """
+    print(f"\033[92m[Subagent Start] 开始执行子任务: {instruction}\033[0m")
+    messages = [
+        {"role": "system", "content": SUBAGENT_SYSTEM_PROMPT},
+        {"role": "user", "content": instruction}
+    ]
+    
+    # 共享钩子
+    trigger_hooks("before_loop", user_input=instruction, messages=messages)
+    
+    final_content = ""
+    for _ in range(30):
+        try:
+            response = client.chat.completions.create(
+                model=MODEL,
+                messages=messages,
+                tools=SUB_TOOLS,
+                tool_choice="auto"
+            )
+        except Exception as e:
+            final_content = f"请求 LLM 时出错: {e}"
+            break
+            
+        message = response.choices[0].message
+        messages.append(message)
+        
+        if not message.tool_calls:
+            final_content = message.content or ""
+            break
+            
+        for raw_tool_call in message.tool_calls:
+            handle_tool_call(raw_tool_call, SUB_FUNCTIONS, messages)
+    else:
+        final_content = "【系统提示】子代理执行已达30轮最大上限，自动终止。"
+        
+    trigger_hooks("after_loop", messages=messages, final_content=final_content)
+    print(f"\033[92m[Subagent End] 子任务执行完毕。\033[0m")
+    return final_content
+
+def agent_loop(messages: list = None) -> list:
     """
     供外部调用的核心函数，用于处理模型调用与工具循环。
     :param messages: 对话消息队列（在外层循环中维护并追加用户消息）
@@ -484,7 +604,7 @@ def chat_with_llm(messages: list = None) -> list:
             response = client.chat.completions.create(
                 model=MODEL,
                 messages=[{"role": "system", "content": SYSTEM_PROMPT}] + messages,
-                tools=tools,
+                tools=TOOLS,
                 tool_choice="auto"
             )
         except Exception as e:
@@ -501,55 +621,14 @@ def chat_with_llm(messages: list = None) -> list:
             final_content = message.content or ""
             break
 
-        # 记录本轮模型决策中是否执行了 todo_write
-        called_todo_in_turn = False
-
-        # 3. 当存在调用工具时，执行该工具并将结果塞入 Content 中，等待下次循环发送
+        # 3. 使用封装的 handle_tool_call 函数执行工具
+        called_todo = False
         for raw_tool_call in message.tool_calls:
-            # 将原始工具调用反序列化为规整的结构化对象
-            tool = ToolCall.from_raw(raw_tool_call)
-            func_to_call = get_tool_function(tool.name)
-            
-            if func_to_call:
-                # b. 每次循环执行工具前 (将结构化的 tool 传递给 hook)
-                hook_results = trigger_hooks("before_tool", tool=tool, messages=messages)
-                
-                is_allowed = True
-                deny_msg = ""
-                for res in hook_results:
-                    if isinstance(res, tuple) and len(res) == 2 and isinstance(res[0], bool):
-                        is_allowed, deny_msg = res
-                        if not is_allowed:
-                            break
-                
-                if is_allowed:
-                    try:
-                        tool.result = str(func_to_call(**tool.args))
-                        # 6. 每次执行完todo_write, 则将记录变量进行清零
-                        if tool.name == "todo_write":
-                            called_todo_in_turn = True
-                            no_todo_count = 0
-                    except Exception as e:
-                        tool.result = f"工具 {tool.name} 执行出错: {str(e)}"
-                else:
-                    tool.result = deny_msg
-                
-                # 1. 将其记录工具的使用次数通过一个after_tool的hook来进行记录, 而不是在loop中进行记录
-                trigger_hooks("after_tool", tool=tool, messages=messages)
-            else:
-                tool.result = f"未找到名为 {tool.name} 的工具，无法执行。"
-                
-            # 将工具执行结果作为 'tool' 角色返回给 LLM
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool.id,
-                "name": tool.name,
-                "content": tool.result
-            })
+            if handle_tool_call(raw_tool_call, FUNCTIONS, messages):
+                called_todo = True
 
         # 4. 在 agent 主循环中通过一个变量记录没调用 todo_write 的次数
-        if not called_todo_in_turn:
-            no_todo_count += 1
+        no_todo_count = 0 if called_todo else no_todo_count + 1
 
         # 当大于等于3次的时候需要加一段话到content中给LLM提示需要更新阶段步骤了
         if no_todo_count >= 3:
@@ -580,7 +659,7 @@ if __name__ == "__main__":
             # 将 user_input 放到外层循环，以及用户输入的消息队列也放到外层循环
             chat_history.append({"role": "user", "content": user_msg})
             # 外部调用该函数进行交互并累积历史记录
-            chat_history = chat_with_llm(chat_history)
+            chat_history = agent_loop(chat_history)
         except (KeyboardInterrupt, EOFError):
             print("\n检测到中断信号，程序已退出。")
             break

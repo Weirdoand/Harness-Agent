@@ -9,7 +9,7 @@ from llm_chat import (
     ToolCall,
     trigger_hooks,
     tool_usage_stats,
-    chat_with_llm
+    agent_loop
 )
 
 def test_todo_manager():
@@ -101,32 +101,32 @@ def test_after_tool_hook_counting():
     assert "本轮交互结束，共调用工具 2 次" in output
     print("after_tool Hook 计数与 after_loop 打印测试通过！\n")
 
-def test_chat_with_llm_no_todo_warning():
-    print("--- 3. 测试 chat_with_llm 中未调用 todo_write 达到3次时的提示注入与清零 ---")
-    
-    class FakeToolCallFunc:
-        def __init__(self, name, args):
-            self.name = name
-            self.arguments = args
+class FakeToolCallFunc:
+    def __init__(self, name, args):
+        self.name = name
+        self.arguments = args
 
-    class FakeToolCall:
-        def __init__(self, call_id, name, args):
-            self.id = call_id
-            self.function = FakeToolCallFunc(name, args)
+class FakeToolCall:
+    def __init__(self, call_id, name, args):
+        self.id = call_id
+        self.function = FakeToolCallFunc(name, args)
 
-    class FakeChoiceMessage:
-        def __init__(self, tool_calls=None, content=None):
-            self.tool_calls = tool_calls or []
-            self.content = content
-            self.role = "assistant"
+class FakeChoiceMessage:
+    def __init__(self, tool_calls=None, content=None):
+        self.tool_calls = tool_calls or []
+        self.content = content
+        self.role = "assistant"
 
-    class FakeChoice:
-        def __init__(self, message):
-            self.message = message
+class FakeChoice:
+    def __init__(self, message):
+        self.message = message
 
-    class FakeResponse:
-        def __init__(self, choice_msg):
-            self.choices = [FakeChoice(choice_msg)]
+class FakeResponse:
+    def __init__(self, choice_msg):
+        self.choices = [FakeChoice(choice_msg)]
+
+def test_agent_loop_no_todo_warning():
+    print("--- 3. 测试 agent_loop 中未调用 todo_write 达到3次时的提示注入与清零 ---")
 
     # 构造5轮响应:
     # 轮次 1: glob_bash
@@ -158,11 +158,12 @@ def test_chat_with_llm_no_todo_warning():
     ]
     
     with patch("llm_chat.client.chat.completions.create", side_effect=responses) as mock_create:
+        from llm_chat import agent_loop, SYSTEM_PROMPT
         # 验证外层循环维护消息队列（纯净的用户与助手对话历史）
         chat_history = []
         user_msg = "开始批量搜索并规划任务"
         chat_history.append({"role": "user", "content": user_msg})
-        messages = chat_with_llm(chat_history)
+        messages = agent_loop(chat_history)
         
         # 3. 验证在 client.chat.completions.create 中直接放入包含 system 提示词的列表
         first_call_messages = mock_create.call_args_list[0].kwargs["messages"]
@@ -195,10 +196,35 @@ def test_chat_with_llm_no_todo_warning():
         assert tool_usage_stats["count"] == 4
         print(f"统计工具调用总次数: {tool_usage_stats['count']} (期望: 4)")
         
-    print("chat_with_llm 循环测试通过！\n")
+def test_run_subagent():
+    print("--- 4. 测试 run_subagent ---")
+    trigger_hooks("before_loop", user_input="reset")
+    tool_usage_stats["count"] = 0
+    
+    responses = [
+        FakeResponse(FakeChoiceMessage(
+            tool_calls=[FakeToolCall("call_s1", "glob_bash", '{"pattern": "*.md"}')]
+        )),
+        FakeResponse(FakeChoiceMessage(
+            tool_calls=[],
+            content="子代理任务完成"
+        ))
+    ]
+    with patch("llm_chat.client.chat.completions.create", side_effect=responses) as mock_create:
+        from llm_chat import run_subagent, SUBAGENT_SYSTEM_PROMPT
+        result = run_subagent("请查找 markdown 文件")
+        
+        # 验证提示词和返回结果
+        first_call_messages = mock_create.call_args_list[0].kwargs["messages"]
+        assert first_call_messages[0]["content"] == SUBAGENT_SYSTEM_PROMPT
+        assert result == "子代理任务完成"
+        
+        # 验证钩子记录了调用
+        assert tool_usage_stats["count"] == 1
 
 if __name__ == "__main__":
     test_todo_manager()
     test_after_tool_hook_counting()
-    test_chat_with_llm_no_todo_warning()
+    test_agent_loop_no_todo_warning()
+    test_run_subagent()
     print("ALL TESTS PASSED SUCCESSFULLY! 所有测试均顺利通过！")
