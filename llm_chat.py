@@ -8,6 +8,11 @@ from openai import OpenAI
 import yaml
 from pathlib import Path
 
+# ---------- 全局运行参数 ----------
+MAX_AGENT_ITERATIONS = 50      # agent_loop 主循环最大迭代轮数（防止无限循环）
+MAX_SUBAGENT_ITERATIONS = 30   # run_subagent 子代理最大迭代轮数
+MAX_TOOL_RESULT_CHARS = 20000  # 单条工具结果追加进对话上下文的最大长度（超长截断）
+
 # 加载 .env 文件中的环境变量
 load_dotenv()
 
@@ -16,10 +21,20 @@ BASE_URL = os.getenv("LLM_BASE_URL")
 MODEL = os.getenv("LLM_MODEL", "gpt-3.5-turbo")
 
 # 初始化 OpenAI 兼容的客户端
-client = OpenAI(
-    api_key=API_KEY,
-    base_url=BASE_URL
-)
+if not API_KEY or not BASE_URL:
+    raise RuntimeError(
+        "未检测到 LLM_API_KEY / LLM_BASE_URL，请检查 .env 文件配置。\n"
+        "提示：.env 含敏感密钥，请确保其已被 .gitignore 忽略，切勿提交到 git。"
+    )
+try:
+    client = OpenAI(
+        api_key=API_KEY,
+        base_url=BASE_URL
+    )
+except Exception as e:
+    raise RuntimeError(
+        f"初始化 LLM 客户端失败，请检查 .env 中的 LLM_API_KEY / LLM_BASE_URL / LLM_MODEL 配置: {e}"
+    ) from e
 
 class SkillLoader:
     def __init__(self):
@@ -70,7 +85,7 @@ class SkillLoader:
         return prompt
 
 SKILL_LOADER = SkillLoader()
-SKILL_LOADER.scan(Path.cwd() / "skills")
+SKILL_LOADER.scan(Path(__file__).resolve().parent / "skills")
 
 def run_bash(command: str) -> str:
     try:
@@ -111,19 +126,29 @@ def read_file(file_path: str) -> str:
         return f"读取出错: {e}"
 
 def edit_file(file_path: str, old_text: str, new_text: str) -> str:
-    """用于局部修改已有文件（替换特定文本）"""
-    import os
+    """用于局部修改已有文件（替换特定文本）。
+
+    - 仅替换第一处匹配（保持 patch 语义）；若匹配到多处会在结果中提示。
+    - 通过临时文件 + os.replace 实现原子写入，避免中途崩溃损坏原文件。
+    """
     if not os.path.exists(file_path):
         return f"编辑失败：文件 {file_path} 不存在，请先使用 write_file 工具创建。"
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = f.read()
-        if old_text not in data:
+        idx = data.find(old_text)
+        if idx == -1:
             return f"编辑失败：在文件中未找到要替换的旧文本 '{old_text}'。"
-        data = data.replace(old_text, new_text)
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(data)
-        return f"文件 {file_path} 编辑成功：已完成局部替换。"
+        occurrence_count = data.count(old_text)
+        # 仅替换第一处，避免 str.replace 全量误伤
+        new_data = data[:idx] + new_text + data[idx + len(old_text):]
+        # 原子写入：先写临时文件，再 os.replace 覆盖原文件
+        tmp_path = file_path + ".tmp"
+        with open(tmp_path, 'w', encoding='utf-8') as f:
+            f.write(new_data)
+        os.replace(tmp_path, file_path)
+        extra = f"（注意：文件中匹配到 {occurrence_count} 处，仅替换了第 1 处）" if occurrence_count > 1 else ""
+        return f"文件 {file_path} 编辑成功：已完成局部替换。{extra}"
     except Exception as e:
         return f"编辑出错: {e}"
 
@@ -403,8 +428,11 @@ class ToolCall:
         """从 LLM 返回的原始 tool_call 中反序列化构建结构化实例"""
         try:
             parsed_args = json.loads(raw_tool_call.function.arguments)
-        except Exception:
-            parsed_args = {}
+        except Exception as e:
+            raise ValueError(
+                f"工具 {raw_tool_call.function.name} 的参数不是合法 JSON: "
+                f"{raw_tool_call.function.arguments!r}"
+            ) from e
         return cls(
             id=raw_tool_call.id,
             name=raw_tool_call.function.name,
@@ -451,7 +479,10 @@ def unregister_hook(stage: str, hook_func: callable) -> bool:
 
 # 阶段 a 的 Hook: 重置工具统计
 def hook_reset_tool_stats(**kwargs):
-    """阶段 a: 每轮交互开始前重置工具调用统计数据"""
+    """阶段 a: 每轮交互开始前重置工具调用统计数据。
+    子代理(run_subagent)内部的 before_loop 不重置，避免清零父级已累计的统计。"""
+    if kwargs.get("is_subagent"):
+        return
     tool_usage_stats["count"] = 0
     tool_usage_stats["tools"].clear()
 
@@ -460,43 +491,62 @@ def hook_log_user_input(user_input: str, messages: list = None, **kwargs):
     """阶段 a: 打印玩家输入的日志"""
     print(f"\033[94m[HOOK: before_loop] 记录用户输入: {user_input}\033[0m")
 
-# 需要用户确认的文件操作工具集合（精确匹配工具名称，避免字符串模糊检索）
-FILE_SENSITIVE_TOOLS = {"write_file", "edit_file", "read_file"}
+# 需要用户确认的文件写入/修改类工具集合（read_file 等只读操作直接放行，避免频繁打断）
+FILE_SENSITIVE_TOOLS = {"write_file", "edit_file"}
 
-# run_bash 高危命令关键词（命中直接拦截）
-BASH_FORBIDDEN_KEYWORDS = ['format ', 'rm -rf /', 'mkfs', 'del /f /s /q c:\\', 'rmdir /s /q c:\\']
+# run_bash 高危命令关键词（命中直接拦截）。注意：黑名单仅为纵深防御手段，无法穷尽所有绕过
+# 方式（别名、编码、嵌套调用等），高风险场景应配合白名单/容器沙箱/最小权限账户运行。
+BASH_FORBIDDEN_KEYWORDS = [
+    'format ', 'mkfs', 'dd if=', 'fdisk',
+    'rm -rf /', 'rm -fr /', 'rm -rf /*', 'rm -fr /*',
+    'del /f /s /q', 'del /s /q', 'rmdir /s /q', 'rd /s /q',
+    'deltree', 'diskpart', 'reg delete', 'clear-content',
+    'shutdown', 'restart-computer', 'stop-computer', ':(){',
+]
 
 # run_bash 敏感命令关键词（需用户确认）
-BASH_SENSITIVE_KEYWORDS = ['rm ', 'del ', 'rmdir', 'erase', 'move ', 'mv ', 'rename', 'ren ', 'remove-item']
+BASH_SENSITIVE_KEYWORDS = [
+    'rm ', 'rm -', 'del ', 'del /', 'rmdir', 'rd ', 'erase', 'deltree',
+    'move ', 'mv ', 'rename', 'ren ', 'remove-item', 'takeown', 'icacls',
+    'attrib ', 'taskkill', 'pkill ', 'kill ', 'net user', 'net use',
+    'curl ', 'wget ', 'iwr ', 'invoke-webrequest', 'start-process',
+]
 
 # 阶段 b 的 Hook: 接收结构化 ToolCall，进行权限校验与高危拦截
 def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
     """阶段 b: 执行工具前的权限判断与高危拦截"""
+
+    def _ask_user(question: str) -> bool:
+        """交互式确认；无可用终端(EOFError)时默认拒绝，避免权限校验 fail-open。"""
+        try:
+            return input(question).strip().lower() == "yes"
+        except EOFError:
+            print("\033[31m[权限校验] 无交互终端，无法完成确认，操作已默认拒绝。\033[0m")
+            return False
+
     args_str = str(tool.args)
     if len(args_str) > 200:
         args_str = args_str[:200] + "..."
     print(f"\033[94m[HOOK: before_tool] 开始工具权限校验 -> {tool.name} | 操作信息: {args_str}\033[0m")
-    
+
     # 1. 针对 run_bash 命令内容进行高危拦截与敏感操作确认
     if tool.name == "run_bash":
         cmd_str = str(tool.args.get("command", "")).lower()
         if any(danger in cmd_str for danger in BASH_FORBIDDEN_KEYWORDS):
             return False, "执行失败：系统已拦截高危操作（如格式化磁盘、删除系统核心文件等）。"
-            
+
         if any(kw in cmd_str for kw in BASH_SENSITIVE_KEYWORDS):
-            user_approval = input(f"\033[36m命令 '{cmd_str}' 请求执行。是否允许？(yes/no): \033[0m").strip().lower()
-            if user_approval != "yes":
+            if not _ask_user(f"\033[36m命令 '{cmd_str}' 请求执行。是否允许？(yes/no): \033[0m"):
                 return False, "用户不允许执行该操作。"
         return True, ""
 
-    # 2. 针对文件读写/修改类敏感工具，通过工具名称集合直接判断，无需检索字符串
+    # 2. 针对文件写入/修改类敏感工具，通过工具名称集合直接判断，无需检索字符串
     if tool.name in FILE_SENSITIVE_TOOLS:
-        user_approval = input(f"\033[36m工具 {tool.name} 请求执行。是否允许？(yes/no): \033[0m").strip().lower()
-        if user_approval != "yes":
+        if not _ask_user(f"\033[36m工具 {tool.name} 请求执行。是否允许？(yes/no): \033[0m"):
             return False, "用户不允许执行该操作。"
         return True, ""
 
-    # 3. 其余安全工具（如 glob_bash, todo_write 等）直接放行
+    # 3. 其余安全工具（如 glob_bash, todo_write, read_file 等）直接放行
     return True, ""
 
 # 阶段 b 的 Hook: 记录 AI 决定执行的工具，并隐藏参数
@@ -566,11 +616,20 @@ def execute_function(tool: ToolCall, available_funcs: dict, messages: list) -> s
     
     is_allowed = True
     deny_msg = ""
+    got_verdict = False  # 是否收到权限 hook 的明确放行/拒绝结论
     for res in hook_results:
         if isinstance(res, tuple) and len(res) == 2 and isinstance(res[0], bool):
+            got_verdict = True
             is_allowed, deny_msg = res
             if not is_allowed:
                 break
+
+    # fail-closed：权限管控类工具若未收到权限 hook 的明确结论
+    # （如无交互终端时 input() 抛 EOFError 被 trigger_hooks 捕获吞掉），一律按拒绝处理
+    gated_tools = FILE_SENSITIVE_TOOLS | {"run_bash"}
+    if tool.name in gated_tools and not got_verdict:
+        is_allowed = False
+        deny_msg = "执行失败：权限校验未完成（可能缺少交互终端），系统已按拒绝处理。"
     
     if is_allowed:
         try:
@@ -590,19 +649,35 @@ def handle_tool_call(raw_tool_call, available_funcs: dict, messages: list) -> bo
     处理单个工具调用并将其结果附加到消息队列中
     返回本次是否调用了 todo_write
     """
-    tool = ToolCall.from_raw(raw_tool_call)
-    
+    try:
+        tool = ToolCall.from_raw(raw_tool_call)
+    except ValueError as e:
+        # 参数解析失败：仍按 API 协议补一条 tool 消息（携带原始 tool_call_id），显式反馈给模型
+        messages.append({
+            "role": "tool",
+            "tool_call_id": raw_tool_call.id,
+            "name": getattr(getattr(raw_tool_call, "function", None), "name", "?"),
+            "content": f"工具参数解析失败: {e}"
+        })
+        return False
+
     result = execute_function(tool, available_funcs, messages)
-    
+
     called_todo = False
     if tool.name == "todo_write" and "执行出错" not in result and "不允许执行" not in result:
         called_todo = True
-        
+
+    # 超长工具结果截断后再进对话上下文，防止 context 无限膨胀
+    content = tool.result
+    if len(content) > MAX_TOOL_RESULT_CHARS:
+        content = content[:MAX_TOOL_RESULT_CHARS] + \
+            f"\n...[结果过长已截断，原长度 {len(tool.result)} 字符，仅保留前 {MAX_TOOL_RESULT_CHARS} 字符]"
+
     messages.append({
         "role": "tool",
         "tool_call_id": tool.id,
         "name": tool.name,
-        "content": tool.result
+        "content": content
     })
     return called_todo
 
@@ -616,11 +691,11 @@ def run_subagent(instruction: str, **kwargs) -> str:
         {"role": "user", "content": instruction}
     ]
     
-    # 共享钩子
-    trigger_hooks("before_loop", user_input=instruction, messages=messages)
-    
+    # 共享钩子（is_subagent=True：before_loop 不重置父级已累计的工具统计）
+    trigger_hooks("before_loop", user_input=instruction, messages=messages, is_subagent=True)
+
     final_content = ""
-    for _ in range(30):
+    for _ in range(MAX_SUBAGENT_ITERATIONS):
         try:
             response = client.chat.completions.create(
                 model=MODEL,
@@ -642,7 +717,7 @@ def run_subagent(instruction: str, **kwargs) -> str:
         for raw_tool_call in message.tool_calls:
             handle_tool_call(raw_tool_call, SUB_FUNCTIONS, messages)
     else:
-        final_content = "【系统提示】子代理执行已达30轮最大上限，自动终止。"
+        final_content = f"【系统提示】子代理执行已达 {MAX_SUBAGENT_ITERATIONS} 轮最大上限，自动终止。"
         
     trigger_hooks("after_loop", messages=messages, final_content=final_content)
     print(f"\033[92m[Subagent End] 子任务执行完毕。\033[0m")
@@ -667,11 +742,15 @@ def agent_loop(messages: list = None) -> list:
     trigger_hooks("before_loop", user_input=latest_user_input, messages=messages)
 
     final_content = ""
-    # 4. 在 agent 主循环中通过一个变量记录没调用 todo_write 的次数
-    no_todo_count = 0
+    iteration_count = 0  # 主循环已迭代轮数（防止模型无限循环调用工具）
+    no_todo_count = 0    # 连续未调用 todo_write 的次数
 
-    # 1. 该函数内部是一个死循环，专门处理可能连续调用的工具流程
+    # 主循环：处理可能连续调用的工具流程（有 MAX_AGENT_ITERATIONS 上限保护）
     while True:
+        iteration_count += 1
+        if iteration_count > MAX_AGENT_ITERATIONS:
+            final_content = f"【系统提示】主代理执行已达 {MAX_AGENT_ITERATIONS} 轮最大上限，自动终止。"
+            break
         try:
             # 直接在 client.chat.completions.create 里面拼接传入系统角色提示词
             response = client.chat.completions.create(

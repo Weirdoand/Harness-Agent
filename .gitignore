@@ -104,4 +104,19 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# ================= Harness-Agent (Python) 追加规则 =================
+# 密钥文件：严禁提交
+.env
+*.env
+
+# Python 缓存与构建产物
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
 /.env
