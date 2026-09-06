@@ -85,6 +85,78 @@ def glob_bash(pattern: str) -> str:
     except Exception as e:
         return f"查找出错: {e}"
 
+# --- 系统角色 Prompt 定义 ---
+SYSTEM_PROMPT = "我是一名代码工程师, 擅长将复杂任务拆分为多个小任务按步骤依次执行, 使用 todo_write 去规划你的子任务步骤, 并更新状态"
+
+# --- 阶段任务管理定义 ---
+class TODOManager:
+    """
+    管理复杂任务的阶段步骤与执行状态。
+    将任务划分为各个小阶段任务进行依次处理。
+    """
+    STATUS_FLAGS = {
+        "pending": "[ ]",
+        "in_progress": "[-]",
+        "completed": "[x]"
+    }
+
+    def __init__(self):
+        self.tasks = []
+
+    def update(self, todos: list = None, **kwargs) -> str:
+        """
+        更新当前阶段分解的子任务信息，由 LLM 传递子任务状态。
+        :param todos: 子任务列表，每个元素形如 {"task": "描述", "status": "pending|in_progress|completed"}
+        :return: 格式化后的状态字符串或提示信息
+        """
+        # 4. 当小任务规划出来就只有一个或非列表时，提示 LLM
+        if not isinstance(todos, list) or len(todos) <= 1:
+            return "todo_write 传入的参数必须是一个列表"
+
+        # 1. 分解的子任务不要超过20个
+        if len(todos) > 20:
+            return "分解的子任务不要超过20个"
+
+        new_tasks = []
+        for item in todos:
+            if isinstance(item, dict):
+                task = item.get("task", "未命名子任务")
+                status = item.get("status")
+                # tools 已限制 enum，直接精确匹配合法状态，否则默认 pending
+                if status not in self.STATUS_FLAGS:
+                    status = "pending"
+                new_tasks.append({"task": task, "status": status})
+
+        if len(new_tasks) <= 1:
+            return "todo_write 传入的参数必须是一个列表"
+
+        self.tasks = new_tasks
+        # 2. update的最后直接调用log, 不要再todo_write来调用
+        return f"阶段任务已更新，当前状态如下：\n{self.log()}"
+
+    def log(self) -> str:
+        """
+        整合当前阶段每个子任务的状态，分别有 pending、in_progress、completed 分别对应一个不同的标志。
+        :return: 格式化后的状态字符串
+        """
+        if not self.tasks:
+            return "当前暂无分解的子任务。"
+        lines = []
+        for idx, item in enumerate(self.tasks, 1):
+            flag = self.STATUS_FLAGS.get(item["status"], "[?]")
+            lines.append(f"{flag} {idx}. {item['task']}")
+        return "\n".join(lines)
+
+# 全局 TODOManager 实例
+todo_manager = TODOManager()
+
+def todo_write(todos: list = None, **kwargs) -> str:
+    """
+    用于供 LLM 更新任务阶段列表与各子任务执行状态，内部调用 TODOManager.update
+    """
+    # 2. update的最后直接调用log, 不要再todo_write来调用
+    return todo_manager.update(todos=todos, **kwargs)
+
 # 定义供 LLM 调用的工具 Schema
 tools = [
     {
@@ -162,6 +234,38 @@ tools = [
                 "required": ["pattern"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "todo_write",
+            "description": "更新任务阶段列表与各步骤的执行状态。用于将复杂任务划分为各个小阶段并跟踪进度。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "todos": {
+                        "type": "array",
+                        "description": "阶段步骤列表，每个步骤包含任务描述(task)和状态(status: pending, in_progress, completed)",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "task": {
+                                    "type": "string",
+                                    "description": "阶段步骤的任务描述"
+                                },
+                                "status": {
+                                    "type": "string",
+                                    "enum": ["pending", "in_progress", "completed"],
+                                    "description": "当前步骤状态：pending(待处理)、in_progress(进行中)、completed(已完成)"
+                                }
+                            },
+                            "required": ["task", "status"]
+                        }
+                    }
+                },
+                "required": ["todos"]
+            }
+        }
     }
 ]
 
@@ -171,7 +275,8 @@ available_functions = {
     "write_file": write_file,
     "read_file": read_file,
     "edit_file": edit_file,
-    "glob_bash": glob_bash
+    "glob_bash": glob_bash,
+    "todo_write": todo_write
 }
 
 def get_tool_function(func_name: str):
@@ -211,8 +316,14 @@ class ToolCall:
 hook_table = {
     "before_loop": [],       # a. 用户输入后没进工具死循环前
     "before_tool": [],       # b. 每次循环执行工具前
-    "after_tool": [],        # c. 每次循环执行工具后
+    "after_tool": [],        # c. 每次循环执行工具后 (打印结果、记录工具使用次数等)
     "after_loop": []         # d. 退出循环停止时
+}
+
+# 工具使用统计记录器
+tool_usage_stats = {
+    "count": 0,
+    "tools": {}
 }
 
 def register_hook(stage: str, hook_func: callable) -> None:
@@ -238,55 +349,89 @@ def unregister_hook(stage: str, hook_func: callable) -> bool:
         return True
     return False
 
+# 阶段 a 的 Hook: 重置工具统计
+def hook_reset_tool_stats(**kwargs):
+    """阶段 a: 每轮交互开始前重置工具调用统计数据"""
+    tool_usage_stats["count"] = 0
+    tool_usage_stats["tools"].clear()
+
 # 阶段 a 的 Hook: 打印玩家输入的日志
-def hook_log_user_input(user_input: str, messages: list, **kwargs):
+def hook_log_user_input(user_input: str, messages: list = None, **kwargs):
     """阶段 a: 打印玩家输入的日志"""
     print(f"\033[94m[HOOK: before_loop] 记录用户输入: {user_input}\033[0m")
+
+# 需要用户确认的文件操作工具集合（精确匹配工具名称，避免字符串模糊检索）
+FILE_SENSITIVE_TOOLS = {"write_file", "edit_file", "read_file"}
+
+# run_bash 高危命令关键词（命中直接拦截）
+BASH_FORBIDDEN_KEYWORDS = ['format ', 'rm -rf /', 'mkfs', 'del /f /s /q c:\\', 'rmdir /s /q c:\\']
+
+# run_bash 敏感命令关键词（需用户确认）
+BASH_SENSITIVE_KEYWORDS = ['rm ', 'del ', 'rmdir', 'erase', 'move ', 'mv ', 'rename', 'ren ', 'remove-item']
 
 # 阶段 b 的 Hook: 接收结构化 ToolCall，进行权限校验与高危拦截
 def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
     """阶段 b: 执行工具前的权限判断与高危拦截"""
-    print(f"\033[94m[HOOK: before_tool] 开始工具权限校验 -> {tool.name}\033[0m")
-    args_str = json.dumps(tool.args, ensure_ascii=False).lower()
+    args_str = str(tool.args)
+    if len(args_str) > 200:
+        args_str = args_str[:200] + "..."
+    print(f"\033[94m[HOOK: before_tool] 开始工具权限校验 -> {tool.name} | 操作信息: {args_str}\033[0m")
     
-    # 高危命令集合：禁止常见格式化磁盘、删除系统核心文件等
-    forbidden_keywords = ['format ', 'rm -rf /', 'mkfs', 'del /f /s /q c:\\', 'rmdir /s /q c:\\']
-    if any(danger in args_str for danger in forbidden_keywords):
-        return False, "执行失败：系统已拦截高危操作（如格式化磁盘、删除系统核心文件等）。"
-        
-    # 需要询问用户的集合（包含 edit, write, read 以及 run_bash 中的文件修改/删除等敏感指令）
-    ask_keywords = ['edit', 'write', 'read', 'rm ', 'del ', 'rmdir', 'erase', 'move ', 'mv ', 'rename', 'ren ', 'remove-item']
-    
-    # 规则匹配: 函数名和 cmd 内容同时判断
-    cmd_str = str(tool.args.get("command", "")).lower()
-    check_target = f"{tool.name} {cmd_str}"
-    
-    if any(kw in check_target for kw in ask_keywords):
-        user_approval = input(f"\033[36m工具 {tool.name} 请求执行。是否允许？(yes/no): \033[0m").strip().lower()
-        if user_approval == "yes":
-            return True, ""
-        else:
-            return False, "用户不允许执行该操作。"
+    # 1. 针对 run_bash 命令内容进行高危拦截与敏感操作确认
+    if tool.name == "run_bash":
+        cmd_str = str(tool.args.get("command", "")).lower()
+        if any(danger in cmd_str for danger in BASH_FORBIDDEN_KEYWORDS):
+            return False, "执行失败：系统已拦截高危操作（如格式化磁盘、删除系统核心文件等）。"
             
+        if any(kw in cmd_str for kw in BASH_SENSITIVE_KEYWORDS):
+            user_approval = input(f"\033[36m命令 '{cmd_str}' 请求执行。是否允许？(yes/no): \033[0m").strip().lower()
+            if user_approval != "yes":
+                return False, "用户不允许执行该操作。"
+        return True, ""
+
+    # 2. 针对文件读写/修改类敏感工具，通过工具名称集合直接判断，无需检索字符串
+    if tool.name in FILE_SENSITIVE_TOOLS:
+        user_approval = input(f"\033[36m工具 {tool.name} 请求执行。是否允许？(yes/no): \033[0m").strip().lower()
+        if user_approval != "yes":
+            return False, "用户不允许执行该操作。"
+        return True, ""
+
+    # 3. 其余安全工具（如 glob_bash, todo_write 等）直接放行
     return True, ""
 
-# 阶段 c 的 Hook: 接收结构化 ToolCall，打印执行结果日志
-def hook_log_tool_result(tool: ToolCall, **kwargs):
-    """阶段 c: 打印工具执行返回结果的日志"""
-    preview_result = tool.result if len(tool.result) < 300 else tool.result[:300] + " ...[内容太长已截断]"
-    print(f"\033[94m[HOOK: after_tool] 工具 {tool.name} 执行完成 | 结果: {preview_result}\033[0m")
+# 阶段 b 的 Hook: 记录 AI 决定执行的工具，并隐藏参数
+def hook_log_tool_intent(tool: ToolCall, **kwargs):
+    """阶段 b: 打印 AI 决定执行的工具（不显示参数）"""
+    print(f"\033[33m[调用工具] AI 决定执行: {tool.name}\033[0m")
 
-# 阶段 d 的 Hook: 打印最终输出的内容日志以及使用工具的总数统计
-def hook_log_final_output_and_stats(final_content: str, tool_count: int, messages: list, **kwargs):
-    """阶段 d: 打印最终输出的内容日志以及使用工具的总数"""
-    print(f"\033[94m[HOOK: after_loop] 本轮交互结束，共调用工具 {tool_count} 次\033[0m")
+# 阶段 c 的 Hook: 接收结构化 ToolCall，工具执行完毕后的操作
+def hook_log_tool_result(tool: ToolCall, **kwargs):
+    """阶段 c: 工具执行完毕后的钩子（保留 todo_write 的日志，移除其余工具的执行完毕日志）"""
+    if tool.name == "todo_write":
+        preview_result = tool.result if len(tool.result) < 300 else tool.result[:300] + " ...[内容太长已截断]"
+        print(f"\033[90m[HOOK: after_tool] 工具 {tool.name} 执行完成 | 结果:\n{preview_result}\033[0m")
+
+# 阶段 c 的 Hook: 通过 after_tool 记录工具的使用次数，而不是在 loop 中进行记录
+def hook_record_tool_use(tool: ToolCall, **kwargs):
+    """通过 after_tool 的 hook 记录工具使用次数，而不是在 loop 中记录"""
+    tool_usage_stats["count"] += 1
+    tool_usage_stats["tools"][tool.name] = tool_usage_stats["tools"].get(tool.name, 0) + 1
+
+# 阶段 d 的 Hook: 记录好了后在 after_loop 时进行打印
+def hook_log_final_output_and_stats(final_content: str, messages: list = None, **kwargs):
+    """阶段 d: 在 after_loop 时打印最终输出的内容日志以及使用工具的总数"""
+    total_count = tool_usage_stats["count"]
+    print(f"\033[94m[HOOK: after_loop] 本轮交互结束，共调用工具 {total_count} 次\033[0m")
     if final_content:
         print(f"\n[LLM]:\n{final_content}")
 
 # 通过普通调用写法进行注册（按阶段注册功能性 Hook 函数）
+register_hook("before_loop", hook_reset_tool_stats)
 register_hook("before_loop", hook_log_user_input)
+register_hook("before_tool", hook_log_tool_intent)
 register_hook("before_tool", hook_check_tool_permission)
 register_hook("after_tool", hook_log_tool_result)
+register_hook("after_tool", hook_record_tool_use)
 register_hook("after_loop", hook_log_final_output_and_stats)
 
 # 单独封装处理 HOOK 的执行函数
@@ -310,28 +455,35 @@ def trigger_hooks(stage: str, **kwargs) -> list:
             print(f"\033[31m[HOOK 执行异常] 阶段 {stage} 函数 {getattr(hook, '__name__', str(hook))} 失败: {e}\033[0m")
     return results
 
-def chat_with_llm(user_input: str, messages: list = None) -> list:
+def chat_with_llm(messages: list = None) -> list:
     """
-    供外部调用的核心函数，用于处理用户输入并与 LLM 进行交流。
+    供外部调用的核心函数，用于处理模型调用与工具循环。
+    :param messages: 对话消息队列（在外层循环中维护并追加用户消息）
     """
     if messages is None:
         messages = []
-        
-    # 将用户的输入添加到消息列表中
-    messages.append({"role": "user", "content": user_input})
+
+    # 提取最近一条用户输入用于 Hook 日志记录
+    latest_user_input = ""
+    for m in reversed(messages):
+        if isinstance(m, dict) and m.get("role") == "user":
+            latest_user_input = m.get("content", "")
+            break
 
     # a. 用户输入后没进工具死循环前 (通过 hook 打印玩家输入日志等)
-    trigger_hooks("before_loop", user_input=user_input, messages=messages)
+    trigger_hooks("before_loop", user_input=latest_user_input, messages=messages)
 
-    tool_count = 0
     final_content = ""
+    # 4. 在 agent 主循环中通过一个变量记录没调用 todo_write 的次数
+    no_todo_count = 0
 
     # 1. 该函数内部是一个死循环，专门处理可能连续调用的工具流程
     while True:
         try:
+            # 直接在 client.chat.completions.create 里面拼接传入系统角色提示词
             response = client.chat.completions.create(
                 model=MODEL,
-                messages=messages,
+                messages=[{"role": "system", "content": SYSTEM_PROMPT}] + messages,
                 tools=tools,
                 tool_choice="auto"
             )
@@ -349,6 +501,9 @@ def chat_with_llm(user_input: str, messages: list = None) -> list:
             final_content = message.content or ""
             break
 
+        # 记录本轮模型决策中是否执行了 todo_write
+        called_todo_in_turn = False
+
         # 3. 当存在调用工具时，执行该工具并将结果塞入 Content 中，等待下次循环发送
         for raw_tool_call in message.tool_calls:
             # 将原始工具调用反序列化为规整的结构化对象
@@ -356,8 +511,6 @@ def chat_with_llm(user_input: str, messages: list = None) -> list:
             func_to_call = get_tool_function(tool.name)
             
             if func_to_call:
-                print(f"\033[33m[工具调用] AI 决定执行: {tool.name} | 参数: {tool.args}\033[0m")
-
                 # b. 每次循环执行工具前 (将结构化的 tool 传递给 hook)
                 hook_results = trigger_hooks("before_tool", tool=tool, messages=messages)
                 
@@ -371,14 +524,17 @@ def chat_with_llm(user_input: str, messages: list = None) -> list:
                 
                 if is_allowed:
                     try:
-                        tool_count += 1
                         tool.result = str(func_to_call(**tool.args))
+                        # 6. 每次执行完todo_write, 则将记录变量进行清零
+                        if tool.name == "todo_write":
+                            called_todo_in_turn = True
+                            no_todo_count = 0
                     except Exception as e:
                         tool.result = f"工具 {tool.name} 执行出错: {str(e)}"
                 else:
                     tool.result = deny_msg
                 
-                # c. 每次循环执行工具后 (将带结果的结构化 tool 传递给 hook)
+                # 1. 将其记录工具的使用次数通过一个after_tool的hook来进行记录, 而不是在loop中进行记录
                 trigger_hooks("after_tool", tool=tool, messages=messages)
             else:
                 tool.result = f"未找到名为 {tool.name} 的工具，无法执行。"
@@ -390,15 +546,26 @@ def chat_with_llm(user_input: str, messages: list = None) -> list:
                 "name": tool.name,
                 "content": tool.result
             })
+
+        # 4. 在 agent 主循环中通过一个变量记录没调用 todo_write 的次数
+        if not called_todo_in_turn:
+            no_todo_count += 1
+
+        # 当大于等于3次的时候需要加一段话到content中给LLM提示需要更新阶段步骤了
+        if no_todo_count >= 3:
+            tip_msg = "\n\n【系统提示】你已连续 3 次及以上未更新任务阶段步骤，请调用 todo_write 工具更新当前分解的子任务状态与进展。"
+            if messages and messages[-1].get("role") == "tool":
+                messages[-1]["content"] += tip_msg
                 
-    # d. 退出循环停止时 (通过 hook 打印最后输出的内容日志以及使用工具的总数)
-    trigger_hooks("after_loop", messages=messages, final_content=final_content, tool_count=tool_count)
+    # 2. 记录好了后在after_loop时进行打印
+    trigger_hooks("after_loop", messages=messages, final_content=final_content)
     return messages
 
 if __name__ == "__main__":
     print("=== LLM 终端助手已启动 (输入 exit 或 quit 退出) ===")
     print("已加载配置 URL:", BASE_URL)
     
+    # 消息队列维护在外层循环（纯净的会话历史）
     chat_history = []
     
     # 外层用户输入死循环：支持多轮持续交互
@@ -410,8 +577,10 @@ if __name__ == "__main__":
             if user_msg.strip().lower() in ["exit", "quit", "q"]:
                 print("程序已退出。")
                 break
+            # 将 user_input 放到外层循环，以及用户输入的消息队列也放到外层循环
+            chat_history.append({"role": "user", "content": user_msg})
             # 外部调用该函数进行交互并累积历史记录
-            chat_history = chat_with_llm(user_msg, chat_history)
+            chat_history = chat_with_llm(chat_history)
         except (KeyboardInterrupt, EOFError):
             print("\n检测到中断信号，程序已退出。")
             break
