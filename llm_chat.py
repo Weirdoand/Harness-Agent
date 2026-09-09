@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 import inspect
 import subprocess
 from dataclasses import dataclass, field
@@ -9,7 +10,6 @@ import yaml
 from pathlib import Path
 
 # ---------- 全局运行参数 ----------
-MAX_AGENT_ITERATIONS = 50      # agent_loop 主循环最大迭代轮数（防止无限循环）
 MAX_SUBAGENT_ITERATIONS = 30   # run_subagent 子代理最大迭代轮数
 MAX_TOOL_RESULT_CHARS = 20000  # 单条工具结果追加进对话上下文的最大长度（超长截断）
 
@@ -35,6 +35,198 @@ except Exception as e:
     raise RuntimeError(
         f"初始化 LLM 客户端失败，请检查 .env 中的 LLM_API_KEY / LLM_BASE_URL / LLM_MODEL 配置: {e}"
     ) from e
+
+
+# ---------- 上下文压缩配置 & 类 ----------
+class Compression:
+    MAX_TOTAL_CONTEXT_SIZE = 80000        # 最大总上下文长度（字符数），超过此阈值触发动态驱逐或总结压缩
+    TOOL_RESULT_PREVIEW_LENGTH = 2000     # 策略一：工具返回结果的预览截断长度（防止单条结果过长占用过多上下文）
+    MAX_MESSAGE_COUNT = 50                # 策略二：最大历史消息数量，超过此数量时触发滑动窗口裁剪
+    HEAD_RETAIN_COUNT = 10                # 策略二：滑动窗口裁剪时保留的头部（最旧）消息数量（确保系统提示和初始任务不被裁剪）
+    TAIL_RETAIN_COUNT = 10                # 策略二：滑动窗口裁剪时保留的尾部（最新）消息数量（保留最近交互记录）
+    RECENT_TOOL_RETAIN_COUNT = 5          # 策略三：深度归档压缩时保留最近未被压缩的工具结果数量
+    SAFE_CONTEXT_RATIO = 0.8              # 策略三：安全阈值比例（当当前上下文长度大于 MAX_TOTAL_CONTEXT_SIZE * SAFE_CONTEXT_RATIO 时开始预警截断）
+    RECOVERY_RETAIN_COUNT = 5             # 错误恢复机制：触发 LLM 报上下文超长错误时，进行紧急总结并保留的最新消息数
+    MAX_RECOVERY_RETRIES = 3              # 错误恢复机制：上下文超长错误恢复的最大重试次数
+    def __init__(self, client, model, archive_dir="./.compression_archive"):
+        self.client = client
+        self.model = model
+        self.archive_dir = archive_dir
+        self.recovery_retries = self.MAX_RECOVERY_RETRIES
+        os.makedirs(self.archive_dir, exist_ok=True)
+
+    def _save_to_file(self, content: str, prefix="archive") -> str:
+        sub_dir = "tool-result" if "tool_result" in prefix else "transcripts"
+        target_dir = os.path.join(self.archive_dir, sub_dir)
+        os.makedirs(target_dir, exist_ok=True)
+        
+        filename = f"{prefix}_{uuid.uuid4().hex[:8]}.txt"
+        filepath = os.path.join(target_dir, filename)
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return os.path.abspath(filepath)
+
+    def _get_context_size(self, messages: list) -> int:
+        return sum(len(str(msg.get("content", ""))) for msg in messages)
+
+    def prepare(self, messages: list):
+        self._strategy_1_tool_truncation(messages)
+        self._strategy_2_windowing(messages)
+        
+        if self._get_context_size(messages) > self.MAX_TOTAL_CONTEXT_SIZE:
+            self._strategy_3_dynamic_eviction(messages)
+            
+        if self._get_context_size(messages) > self.MAX_TOTAL_CONTEXT_SIZE or getattr(self, 'compact_flag', False):
+            self._strategy_4_llm_summarization(messages)
+            
+    def _strategy_1_tool_truncation(self, messages: list):
+        print(f"\033[36m[Context Compression] 开始执行策略一：工具结果截断...\033[0m")
+            
+        tool_messages = [msg for msg in messages if msg.get("role") == "tool" and "content" in msg]
+        
+        for msg in tool_messages:
+            content = str(msg["content"])
+            if "[本地归档路径]" in content or "结果过长已截断" in content:
+                continue
+            if len(content) > self.TOOL_RESULT_PREVIEW_LENGTH:
+                path = self._save_to_file(content, prefix="tool_result")
+                msg["content"] = f"[本地归档路径]: {path}\n[结果前缀]:\n{content[:self.TOOL_RESULT_PREVIEW_LENGTH]}...\n[其余内容已被策略一截断保存至本地]"
+        
+        print(f"\033[36m[Context Compression] 策略一执行完毕。\033[0m")
+
+    def _strategy_2_windowing(self, messages: list):
+        print(f"\033[36m[Context Compression] 开始执行策略二：滑动窗口裁剪...\033[0m")
+        if len(messages) > self.MAX_MESSAGE_COUNT:
+            head_end = self.HEAD_RETAIN_COUNT
+            # 调整头部保留边界：如果截断点在tool上，则一直递增到首个不是tool的消息
+            while head_end < len(messages) and messages[head_end].get("role") == "tool":
+                head_end += 1
+                
+            tail_start = len(messages) - self.TAIL_RETAIN_COUNT
+            # 调整尾部保留边界：如果截断点在tool上，则往前移（递减），尝试将发出tool_call的assistant消息也包含进尾部
+            while tail_start > 0 and messages[tail_start].get("role") == "tool":
+                tail_start -= 1
+
+            if head_end >= tail_start:
+                print(f"\033[36m[Context Compression] 策略二取消：裁剪边界重叠。\033[0m")
+                return
+
+            archived_content = json.dumps(messages, ensure_ascii=False, indent=2)
+            path = self._save_to_file(archived_content, prefix="context_window")
+            
+            head = messages[:head_end]
+            tail = messages[tail_start:]
+            middle_count = len(messages) - len(head) - len(tail)
+            
+            notice_msg = {
+                "role": "system", 
+                "content": f"已裁剪中间 {middle_count} 条消息。\n完整存档地址: {path}"
+            }
+            messages[:] = head + [notice_msg] + tail
+            print(f"\033[36m[Context Compression] 策略二执行完毕 (移除了 {middle_count} 条)。\033[0m")
+        else:
+            print(f"\033[36m[Context Compression] 策略二跳过：消息总数正常。\033[0m")
+
+    def _strategy_3_dynamic_eviction(self, messages: list):
+        print(f"\033[36m[Context Compression] 开始执行策略三：深度归档压缩...\033[0m")
+        target_size = self.MAX_TOTAL_CONTEXT_SIZE * self.SAFE_CONTEXT_RATIO
+        
+        if self._get_context_size(messages) <= target_size:
+            print(f"\033[36m[Context Compression] 策略三跳过：上下文大小已达标。\033[0m")
+            return
+            
+        tool_messages = [msg for msg in messages if msg.get("role") == "tool" and "content" in msg]
+        
+        retain_count = getattr(self, 'RECENT_TOOL_RETAIN_COUNT', 5)
+        if len(tool_messages) > retain_count:
+            evict_candidates = tool_messages[:-retain_count]
+        else:
+            evict_candidates = []
+            
+        for msg in evict_candidates:
+            content = str(msg["content"])
+            
+            if "[Earlier tool result saved at" in content:
+                continue
+                
+            if "[本地归档路径]:" in content:
+                path = content.split('\n')[0].replace('[本地归档路径]:', '').strip()
+            else:
+                path = self._save_to_file(content, prefix="tool_result")
+                
+            msg["content"] = f"[Earlier tool result saved at {path}]"
+            
+            if self._get_context_size(messages) <= target_size:
+                break
+        print(f"\033[36m[Context Compression] 策略三执行完毕。\033[0m")
+
+
+    def _strategy_4_llm_summarization(self, messages: list, retain_recent=0):
+        print(f"\033[36m[Context Compression] 开始执行策略四：LLM 上下文智能总结...\033[0m")
+        archived_content = json.dumps(messages, ensure_ascii=False, indent=2)
+        path = self._save_to_file(archived_content, prefix="llm_summary_archive")
+        
+        # 如果没有指定 retain_recent，自动寻找最后一个 user 消息，保留当前这一整轮的完整对话
+        if retain_recent == 0:
+            last_user_idx = -1
+            for i in range(len(messages) - 1, -1, -1):
+                if messages[i].get("role") == "user":
+                    last_user_idx = i
+                    break
+            if last_user_idx != -1:
+                retain_recent = len(messages) - last_user_idx
+
+        if retain_recent > 0:
+            split_idx = len(messages) - retain_recent
+            while split_idx > 0 and split_idx < len(messages) and messages[split_idx].get("role") == "tool":
+                split_idx -= 1
+            retain_recent = len(messages) - split_idx
+
+        to_summarize = messages[:-retain_recent] if retain_recent > 0 else messages[:]
+        retained = messages[-retain_recent:] if retain_recent > 0 else []
+        
+        prompt = (
+            "请客观总结以下对话历史。必须保留：当前目标、剩余步骤、相关发现等重要上下文信息。\n\n"
+            f"{json.dumps(to_summarize, ensure_ascii=False)}"
+        )
+        
+        user_request = ""
+        if retained and retained[0].get("role") == "user":
+            user_request = str(retained[0].get("content", ""))
+        
+        summary_msg = self._generate_summary_message(prompt, path, user_request)
+        messages[:] = [summary_msg] + retained
+        print(f"\033[36m[Context Compression] 策略四执行完毕。\033[0m")
+
+    def _generate_summary_message(self, prompt: str, path: str, user_request: str = "") -> dict:
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            summary = response.choices[0].message.content
+        except Exception as e:
+            summary = f"总结失败: {e}"
+            
+        content_parts = ["[Compact 标记信息]"]
+        if user_request:
+            content_parts.append(f"【当前用户请求】:\n{user_request}")
+        content_parts.append(f"本地存档地址: {path}\n[上下文智能总结]:\n{summary}")
+        
+        return {
+            "role": "system",
+            "content": "\n\n".join(content_parts)
+        }
+
+    def handle_error_recovery(self, messages: list) -> bool:
+        if self.recovery_retries > 0:
+            self.recovery_retries -= 1
+            self._strategy_4_llm_summarization(messages, retain_recent=self.RECOVERY_RETAIN_COUNT)
+            return True
+        return False
+
+# 全局压缩器实例
+context_compressor = Compression(client, MODEL)
 
 class SkillLoader:
     def __init__(self):
@@ -169,7 +361,7 @@ skill_prompt = SKILL_LOADER.get_skill_prompt()
 if skill_prompt:
     BASE_PROMPT += f"\n\n{skill_prompt}\n这些skill是可用的skill, 如果有相关的部分优先使用skill\n"
 
-SYSTEM_PROMPT = "我是一名代码工程师, 擅长将复杂任务拆分为多个小任务按步骤依次执行, 使用 todo_write 去规划你的子任务步骤, 使用 task 派发 subagent 完成需求, 或者自己完成需求, 并更新状态" + BASE_PROMPT
+SYSTEM_PROMPT = "我是一名代码工程师, 擅长将复杂任务拆分为多个小任务按步骤依次执行, 使用 todo_write 去规划你的子任务步骤, 使用 task 派发 subagent 完成需求, 或者自己完成需求, 并更新状态。不对历史提问进行任务派发和指令, 聚焦于当前对话的内容。将执行任务过程中生成的 python 脚本和其他文件单独放在一个文件夹中（如 workspace 或 outputs 目录）。" + BASE_PROMPT
 SUBAGENT_SYSTEM_PROMPT = "你是一个子任务执行助手。完成指定派发下来的 task 并将答案返回上去" + BASE_PROMPT
 
 # --- 阶段任务管理定义 ---
@@ -354,6 +546,18 @@ BASE_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "compact",
+            "description": "显式触发上下文压缩。当你认为当前的对话已经非常长，或者完成了一个重要阶段，可以调用此工具来总结历史对话，释放上下文空间。",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "load_skill",
             "description": "加载指定技能的 SKILL.md 内容，获取技能的详细指南和约束。",
             "parameters": {
@@ -388,6 +592,11 @@ SUB_TOOLS = list(BASE_TOOLS)
 # 供父级 Agent 调用的完整工具集合（包含派发子代理的 task 工具）
 TOOLS = BASE_TOOLS + [task_schema]
 
+
+def compact(**kwargs) -> str:
+    """手动触发压缩的工具"""
+    return "已标记为需要压缩。压缩将在本轮工具调用结束后执行。"
+
 def task(instruction: str, **kwargs) -> str:
     """创建一个子执行代理完成子任务"""
     # run_subagent 将在稍后定义，此处做个占位或直接调用
@@ -401,7 +610,8 @@ BASE_FUNCTIONS = {
     "edit_file": edit_file,
     "glob_bash": glob_bash,
     "todo_write": todo_write,
-    "load_skill": SKILL_LOADER.load_skill
+    "load_skill": SKILL_LOADER.load_skill,
+    "compact": compact
 }
 
 # 专门给 subagent 使用的函数集合
@@ -704,11 +914,16 @@ def run_subagent(instruction: str, **kwargs) -> str:
                 tool_choice="auto"
             )
         except Exception as e:
+            error_msg = str(e).lower()
+            if "context" in error_msg and ("length" in error_msg or "too long" in error_msg) or "maximum context" in error_msg:
+                print(f"\033[33m[系统提示] 子代理检测到上下文超限错误，尝试紧急压缩恢复 (剩余重试: {context_compressor.recovery_retries})...\033[0m")
+                if context_compressor and context_compressor.handle_error_recovery(messages):
+                    continue
             final_content = f"请求 LLM 时出错: {e}"
             break
             
         message = response.choices[0].message
-        messages.append(message)
+        messages.append(message.model_dump(exclude_none=True))
         
         if not message.tool_calls:
             final_content = message.content or ""
@@ -723,50 +938,55 @@ def run_subagent(instruction: str, **kwargs) -> str:
     print(f"\033[92m[Subagent End] 子任务执行完毕。\033[0m")
     return final_content
 
-def agent_loop(messages: list = None) -> list:
+def agent_loop(messages: list = None, latest_user_input: str = "") -> list:
     """
     供外部调用的核心函数，用于处理模型调用与工具循环。
     :param messages: 对话消息队列（在外层循环中维护并追加用户消息）
+    :param latest_user_input: 最近一轮玩家发送的对话内容（用于日志或Hook记录）
     """
     if messages is None:
         messages = []
-
-    # 提取最近一条用户输入用于 Hook 日志记录
-    latest_user_input = ""
-    for m in reversed(messages):
-        if isinstance(m, dict) and m.get("role") == "user":
-            latest_user_input = m.get("content", "")
-            break
 
     # a. 用户输入后没进工具死循环前 (通过 hook 打印玩家输入日志等)
     trigger_hooks("before_loop", user_input=latest_user_input, messages=messages)
 
     final_content = ""
-    iteration_count = 0  # 主循环已迭代轮数（防止模型无限循环调用工具）
     no_todo_count = 0    # 连续未调用 todo_write 的次数
 
-    # 主循环：处理可能连续调用的工具流程（有 MAX_AGENT_ITERATIONS 上限保护）
+
+    # 主循环：处理可能连续调用的工具流程
     while True:
-        iteration_count += 1
-        if iteration_count > MAX_AGENT_ITERATIONS:
-            final_content = f"【系统提示】主代理执行已达 {MAX_AGENT_ITERATIONS} 轮最大上限，自动终止。"
-            break
+        # 在每次请求 LLM 之前，调用压缩器预处理
+        if context_compressor:
+            context_compressor.prepare(messages)
+            
         try:
+            # 将当前用户请求动态注入到系统提示词中，防止长工具链执行时发生目标偏移
+            current_system_prompt = SYSTEM_PROMPT
+            if latest_user_input:
+                current_system_prompt += f"\n\n【当前正在执行的用户请求】:\n{latest_user_input}"
+
             # 直接在 client.chat.completions.create 里面拼接传入系统角色提示词
             response = client.chat.completions.create(
                 model=MODEL,
-                messages=[{"role": "system", "content": SYSTEM_PROMPT}] + messages,
+                messages=[{"role": "system", "content": current_system_prompt}] + messages,
                 tools=TOOLS,
                 tool_choice="auto"
             )
         except Exception as e:
+            error_msg = str(e).lower()
+            if "context" in error_msg and ("length" in error_msg or "too long" in error_msg) or "maximum context" in error_msg:
+                print(f"\033[33m[系统提示] 检测到上下文超限错误，尝试紧急压缩恢复 (剩余重试: {context_compressor.recovery_retries})...\033[0m")
+                if context_compressor and context_compressor.handle_error_recovery(messages):
+                    continue
             print(f"请求 LLM 时出错: {e}")
             break
             
         message = response.choices[0].message
         
-        # 将 LLM 的回复记录到上下文中（包括它发出的 tool_calls 信息）
-        messages.append(message)
+        # 将 LLM 的回复记录到上下文中（转为字典格式以便后续压缩处理修改内容）
+        msg_dict = message.model_dump(exclude_none=True)
+        messages.append(msg_dict)
 
         # 2. 判断：如果没有调用工具，则记录最后回复内容并停止循环
         if not message.tool_calls:
@@ -775,9 +995,18 @@ def agent_loop(messages: list = None) -> list:
 
         # 3. 使用封装的 handle_tool_call 函数执行工具
         called_todo = False
+        called_compact = False
         for raw_tool_call in message.tool_calls:
+            # 判断是否调用了 compact 工具
+            if getattr(getattr(raw_tool_call, "function", None), "name", None) == "compact":
+                called_compact = True
+                
             if handle_tool_call(raw_tool_call, FUNCTIONS, messages):
                 called_todo = True
+                
+        # 在本轮所有工具调用结束后，如果调用了 compact，则直接触发策略四
+        if called_compact and context_compressor:
+            context_compressor._strategy_4_llm_summarization(messages)
 
         # 4. 在 agent 主循环中通过一个变量记录没调用 todo_write 的次数
         no_todo_count = 0 if called_todo else no_todo_count + 1
@@ -811,7 +1040,7 @@ if __name__ == "__main__":
             # 将 user_input 放到外层循环，以及用户输入的消息队列也放到外层循环
             chat_history.append({"role": "user", "content": user_msg})
             # 外部调用该函数进行交互并累积历史记录
-            chat_history = agent_loop(chat_history)
+            chat_history = agent_loop(chat_history, user_msg)
         except (KeyboardInterrupt, EOFError):
             print("\n检测到中断信号，程序已退出。")
             break
