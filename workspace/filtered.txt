@@ -1,0 +1,11 @@
+FILE: H:\AI Files\Harness-Agent\skills\code-review\SKILL.md
+FILE: H:\AI Files\Harness-Agent\需求文档\Memory需求文档.md
+FILE: H:\AI Files\learn-claude-code\docs\en\s06-context-compact.md
+FILE: H:\AI Files\learn-claude-code\docs\en\s12-worktree-task-isolation.md
+FILE: H:\AI Files\learn-claude-code\docs\ja\s06-context-compact.md
+FILE: H:\AI Files\learn-claude-code\docs\ja\s12-worktree-task-isolation.md
+FILE: H:\AI Files\learn-claude-code\docs\zh\s06-context-compact.md
+FILE: H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md
+FILE: H:\AI Files\learn-claude-code\s12_cron_scheduler\README.md
+FILE: H:\AI Files\learn-claude-code\skills\code-review\SKILL.md
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css

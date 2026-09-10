@@ -1,0 +1,1344 @@
+=== 扫描完成: 出现3格或tab的文件共 203 个 (其中含3格 168 个, 含tab 35 个) ===
+FILE: H:\AI Files\CoreAI\CONTRIBUTING.md
+   缩进3格的行数=4, 4格行数=0, 含tab缩进的行数=0
+     例3格@行80:    `package.json` files (and their internal `com.neoxider.*` pins) plus `McpServ
+     例3格@行81:    lockstep, then verifies the result. `python tools/bump_version.py --check` ve
+     例3格@行82:    Never hand-edit one manifest — the MCP server's advertised version is the pie
+     例3格@行84:    checklist described the old behaviour; a change is not done while a doc still
+FILE: H:\AI Files\CoreAI\Assets\CoreAI\Docs\AGENT_BUILDER.md
+   缩进3格的行数=1, 4格行数=189, 含tab缩进的行数=0
+     例3格@行153:    `{"success":true}` instead of disappearing.
+FILE: H:\AI Files\CoreAI\Assets\CoreAI\Docs\FIRST_MOD.md
+   缩进3格的行数=12, 4格行数=5, 含tab缩进的行数=0
+     例3格@行150:    single JSON bundle of the shape `{"manifest":{...},"source":"..."}`. Send tha
+     例3格@行151:    player; they run `manage_mods import` with it (or `LuaCsModRuntime.ImportMod(
+     例3格@行152:    and the mod loads on their machine. Use `manage_mods forget` (`LuaCsModRuntim
+     例3格@行153:    permanently delete a stored package.
+     例3格@行155:    ```json
+     例3格@行156:    { "action": "export", "mod_id": "greeter" }
+     例3格@行157:    ```
+     例3格@行158:    ```json
+FILE: H:\AI Files\CoreAI\Assets\CoreAI\Docs\LUA_NATIVE_APIS.md
+   缩进3格的行数=1, 4格行数=3, 含tab缩进的行数=0
+     例3格@行87:    need custom argument/return handling.
+FILE: H:\AI Files\CoreAI\Assets\CoreAI.Demos\DirectorAi\README.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行33:    that already has a `CoreAILifetimeScope`).
+     例3格@行37:    **Tracked Tags** so their counts appear in observations.
+FILE: H:\AI Files\CoreAI\Assets\CoreAI.Demos\ModdableUnits\README.md
+   缩进3格的行数=1, 4格行数=1, 含tab缩进的行数=0
+     例3格@行61:    revives defenders, so the fight never ends.
+FILE: H:\AI Files\CoreAI\Assets\CoreAI.Demos\QwenDemo\README.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行16:    startup and verifies that its `POST /v1/chat/completions` route accepts conne
+     例3格@行17:    expose `/v1/models`.
+FILE: H:\AI Files\CoreAI\Assets\CoreAI.Demos\Skills\README.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行21:    attack the training dummy).
+     例3格@行23:    model tool calls. The agent response is shown in the panel.
+FILE: H:\AI Files\CoreAI\Assets\CoreAIBenchmark\Tests\PlayMode\Benchmarks\BENCHMARK_DESIGN.md
+   缩进3格的行数=3, 4格行数=0, 含tab缩进的行数=0
+     例3格@行45:    recursion, multi-condition math, constraint satisfaction). The "intelligence"
+     例3格@行46:    model that follows instructions from one that actually reasons.
+     例3格@行48:    exact counts, forbidden tools, ordering, tool budgets). Each violation costs 
+FILE: H:\AI Files\CoreAI\Assets\CoreAIMcp\README.md
+   缩进3格的行数=7, 4格行数=5, 含tab缩进的行数=0
+     例3格@行68:    the MCP tools wrap those services.
+     例3格@行70:    `CoreAILifetimeScope` (and, for the Lua tools, a `CoreAiModsLifetimeScope`).
+     例3格@行72:    `COREAI_MCP_TOKEN`) if you want the same token every run.
+     例3格@行74:    by the auth token line.
+     例3格@行149:    action semantics, coordinate units).
+     例3格@行151:    Programmer agent uses — one source of truth, no duplicated docs. An external 
+     例3格@行152:    `read_skill('Rbx API')` and gets the exact datatypes/instances API the runnin
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\AI_AGENT_ROLES.md
+   缩进3格的行数=3, 4格行数=0, 含tab缩进的行数=0
+     例3格@行330:    ```
+     例3格@行331:    structured_retry: Expected execute_lua tool call
+     例3格@行332:    ```
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\AUDIT_LOG.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行152:    chained normally from the current head. Its resulting hash is the cross-file 
+     例3格@行155:    entry, its own stored `prevHash` is the previous file's final hash — not `""`
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\CONTEXT_MANAGEMENT_ROADMAP.md
+   缩进3格的行数=4, 4格行数=4, 含tab缩进的行数=0
+     例3格@行13:    last exchanges and behaves "amnesiac" (e.g. an agent re-greeting every turn) 
+     例3格@行15:    the provider-side cache, so every turn pays full input price. (Anthropic need
+     例3格@行16:    breakpoints; OpenAI/DeepSeek-compatible backends auto-cache a *stable* prefix
+     例3格@行18:    text, so the model cannot reason across turns from what a tool returned.
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\COREAI_SETTINGS.md
+   缩进3格的行数=7, 4格行数=9, 含tab缩进的行数=0
+     例3格@行491:    ↓ null
+     例3格@行493:    - Auto → Auto (LLMUnity → HTTP → Offline)
+     例3格@行494:    - LlmUnity → LlmUnity
+     例3格@行495:    - OpenAiHttp → HTTP API
+     例3格@行496:    - Offline → Stub
+     例3格@行497:    ↓ null
+     例3格@行499:    ↓ not set
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\DETERMINISM_AND_REPLAY.md
+   缩进3格的行数=8, 4格行数=0, 含tab缩进的行数=0
+     例3格@行46:    the same payloads that appear as `WorldMutation`/`ToolCall` entries — through
+     例3格@行47:    netcode, exactly as you would replicate any server-side game logic.
+     例3格@行49:    include the result in the tool payload, so the recorded effect is self-contai
+     例3格@行51:    a client that disagrees re-syncs from replicated state as usual.
+     例3格@行62:    evidence against a client to the extent the client cannot rewrite it: keep th
+     例3格@行63:    host-side, and/or use a **keyed HMAC chain** (`AuditHash.HmacChain` +
+     例3格@行64:    `AuditLogVerifier.Verify(path, hmacKey)`) with a host-held key the client nev
+     例3格@行65:    unkeyed chain is an integrity checksum, not proof against the party that owns
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\DEVELOPER_GUIDE.md
+   缩进3格的行数=2, 4格行数=31, 含tab缩进的行数=0
+     例3格@行276:    `## Tool Availability (current request)`;
+     例3格@行341:    `LlmCompletionRequest.ChatHistory` in an `ILlmClient` test double (see `Promp
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\DGF_SPEC.md
+   缩进3格的行数=7, 4格行数=5, 含tab缩进的行数=0
+     例3格@行308:    The default **`IAiOrchestrationService`** implementation is **`QueuedAiOrches
+     例3格@行311:    Any **`UnityEngine.*`** calls, work with **`GameObject` / `Component` / `Tran
+     例3格@行314:    Subscriber **`AiGameCommandRouter`** on **`ApplyAiGameCommand`**, after deliv
+     例3格@行317:    - **Preferred:** subscribe to **`AiGameCommandRouter.CommandReceived`** (afte
+     例3格@行318:    - **If** subscribing **directly** to **`ISubscriber<ApplyAiGameCommand>`** (p
+     例3格@行319:    - **Without UniTask:** a command queue (`ConcurrentQueue<ApplyAiGameCommand>`
+     例3格@行322:    One could remove `ConfigureAwait(false)` in the queue or **`SwitchToMainThrea
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\EXAMPLES.md
+   缩进3格的行数=14, 4格行数=53, 含tab缩进的行数=0
+     例3格@行323:    1. {"name": "get_inventory", "arguments": {}}
+     例3格@行324:    2. Receives: [{name: "Iron Sword", price: 50, qty: 3}, ...]
+     例3格@行325:    3. Builds reply
+     例3格@行328:    • Iron Sword — 50 coins (3 in stock, solid iron!)
+     例3格@行329:    • Steel Axe — 100 coins (last one! For serious chopper types)
+     例3格@行330:    • Health Potion — 25 coins (10 in stock, stay healthy)
+     例3格@行331:    • Flame Blade — 250 coins (FIRE! Literally!)
+     例3格@行332:    So, buying anything?"
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\LLMUNITY_SETUP_AND_MODELS.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行110:    - `https://api.openai.com/v1`
+     例3格@行111:    - `http://127.0.0.1:1234/v1` (typical LM Studio)
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\MemorySystem.md
+   缩进3格的行数=4, 4格行数=22, 含tab缩进的行数=0
+     例3格@行79:    - Loads the last 20 messages from `IAgentMemoryStore.GetChatHistory()`
+     例3格@行80:    - Inserts them into `LLMAgent.AddToHistory()`
+     例3格@行81:    - Calls `Chat(addToHistory: true)`
+     例3格@行82:    - Saves user + assistant messages back to the store
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\QUICK_START_FULL.md
+   缩进3格的行数=17, 4格行数=12, 含tab缩进的行数=0
+     例3格@行31:    It provides an OpenAI-compatible HTTP API.
+     例3格@行64:    Download time: 2–5 minutes (depends on your connection)
+     例3格@行85:    URL: http://localhost:1234/v1
+     例3格@行86:    Model: Qwen3.5-4B-Q4_K_M
+     例3格@行87:    Status: Ready
+     例3格@行116:    the only UXML path left in Unity 6.6+)
+     例3格@行133:    it if it does not exist yet. (The asset is never created automatically on pac
+     例3格@行134:    menu, or **CoreAI → Setup → Create Default Assets** for the whole default set
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\RUNNING_LIVE_TESTS.md
+   缩进3格的行数=1, 4格行数=9, 含tab缩进的行数=0
+     例3格@行24:    HTTP backend).
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\STREAMING_WEBGL_TODO.md
+   缩进3格的行数=1, 4格行数=5, 含tab缩进的行数=0
+     例3格@行60:    yields a single `LlmStreamChunk` with final `Text` + `IsDone = true`.
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\SUBSCRIPTION_BRIDGE.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行29:    Base URL: http://127.0.0.1:8801/v1                (local bridge)             
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\TESTING_TOOL_CALLING.md
+   缩进3格的行数=5, 4格行数=0, 含tab缩进的行数=0
+     例3格@行98:    ```
+     例3格@行99:    LLM ▶ (stream) traceId=…
+     例3格@行100:    [ToolCall] traceId=… role=… tool=memory status=OK dur=12ms args={"action":"ap
+     例3格@行101:    LLM ◀ (stream) traceId=… … | tools=[memory(ok,12ms)]
+     例3格@行103:    ```
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Docs\TROUBLESHOOTING.md
+   缩进3格的行数=4, 4格行数=13, 含tab缩进的行数=0
+     例3格@行520:    - Core AI Settings
+     例3格@行521:    - Agent Prompts Manifest (optional)
+     例3格@行522:    - Game Log Settings (optional)
+     例3格@行523:    - World Prefab Registry (optional)
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Runtime\Source\Features\Chat\README_CHAT.md
+   缩进3格的行数=2, 4格行数=74, 含tab缩进的行数=0
+     例3格@行50:    - Unity 6.5+: add `PanelRenderer`.
+     例3格@行51:    - Unity 6.3/6.4: add `UIDocument`.
+FILE: H:\AI Files\CoreAI\Assets\CoreAiUnity\Tests\README.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行89:    affected test, feature documentation, or changelog.
+     例3格@行92:    green test that cannot fail.
+FILE: H:\AI Files\CoreAI\Assets\dev\docs\coreai-mods-and-hub-plan.md
+   缩进3格的行数=13, 4格行数=0, 含tab缩进的行数=0
+     例3格@行14:    Lua tools, Lua Modding skill) moves into a new package `com.neoxider.coreaimo
+     例3格@行15:    CoreAI. `CoreAI.Core`/`CoreAI.Source` end up with **zero MoonSharp / zero Lua
+     例3格@行16:    CoreAI keeps the generic tool/agent/skill framework and a thin MoonSharp-free
+     例3格@行17:    (version store, prompt-composer repair, `EnableLuaOnWebGl`).
+     例3格@行19:    With `com.neoxider.coreaimods` installed, `COREAI_LUA` explicitly enables the
+     例3格@行20:    runtime and guarded Lua surfaces; without the symbol they compile out. The le
+     例3格@行21:    is unsupported. Active guards use `#if COREAI_LUA` and assemblies are not bla
+     例3格@行23:    public **page-registry API** so C# modules AND Lua mods can add a page at run
+FILE: H:\AI Files\CoreAI\Assets\dev\docs\GAME_TESTBED_PROPOSALS.md
+   缩进3格的行数=4, 4格行数=0, 含tab缩进的行数=0
+     例3格@行27:    changes LIVE" (dense fast Update loop full of spawnable GameObjects + obvious
+     例3格@行28:    complete/organized hack-week codebase, permissive, closest to Unity 6. "Make 
+     例3格@行29:    / "double the spawn rate" map onto real seams with minimal plumbing.
+     例3格@行31:    cleanest live-tuning story (keyframe spawn curve + SO weapon defs = ideal Lua
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\GridSystem.md
+   缩进3格的行数=18, 4格行数=7, 含tab缩进的行数=0
+     例3格@行82:    - `Rectangular`
+     例3格@行83:    - `Hexagonal` (аппроксимация через axial distance)
+     例3格@行84:    - `Custom` (база выключена, включение только через маску/override)
+     例3格@行86:    - `EnabledCells` — whitelist;
+     例3格@行87:    - `DisabledCells` — blacklist.
+     例3格@行89:    - `DisabledCells`
+     例3格@行90:    - `ForcedEnabledCells`
+     例3格@行226:    - `Grid` (Unity),
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Plan_RemoveDeprecatedScripts.md
+   缩进3格的行数=8, 4格行数=0, 含tab缩进的行数=0
+     例3格@行59:    - `Assets/Neoxider/Scripts/Bonus/TimeReward/TimeReward.cs`  
+     例3格@行60:    - `Assets/Neoxider/Scripts/Bonus/TimeReward/TimeReward.cs.meta`
+     例3格@行63:    - `Assets/Neoxider/Scripts/Tools/Other/AiNavigation.cs`  
+     例3格@行64:    - `Assets/Neoxider/Scripts/Tools/Other/AiNavigation.cs.meta`
+     例3格@行67:    - `Assets/Neoxider/Scripts/Bonus/WheelFortune/WheelFortune.cs`  
+     例3格@行68:    - `Assets/Neoxider/Scripts/Bonus/WheelFortune/WheelFortune.cs.meta`
+     例3格@行71:    - `Assets/Neoxider/Scripts/UI/UIReady.cs`  
+     例3格@行72:    - `Assets/Neoxider/Scripts/UI/UIReady.cs.meta`
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Bonus\Collection\IMPROVEMENTS.md
+   缩进3格的行数=11, 4格行数=47, 含tab缩进的行数=0
+     例3格@行377:    - Common, Rare, Epic, Legendary
+     例3格@行378:    - Простое добавление в ItemCollectionData
+     例3格@行381:    - Числовой ID категории
+     例3格@行382:    - Константы для категорий
+     例3格@行385:    - `GetItemsByCategory(int category)`
+     例3格@行386:    - `GetItemsByRarity(ItemRarity rarity)`
+     例3格@行387:    - `GetUnlockedItems()`
+     例3格@行388:    - `GetLockedItems()`
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Bonus\TimeReward\CooldownReward.md
+   缩进3格的行数=6, 4格行数=8, 含tab缩进的行数=0
+     例3格@行60:    - `_rewardAvailableOnStart == false`: в `Init()` вызывается `SetTime(duration
+     例3格@行61:    - `_rewardAvailableOnStart == true`: награда доступна сразу; при первом `Take
+     例3格@行64:    - По сохранённому UTC и текущему времени считается, сколько интервалов прошло
+     例3格@行67:    - Выдаётся до `GetClaimableCount()` наград; вызываются `OnRewardClaimed` (по 
+     例3格@行68:    - При `_saveTimeOnTakeReward` время сдвигается и сохраняется; иначе кулдаун с
+     例3格@行71:    - Базовый TimerObject в режиме RealTime обновляет остаток; при завершении — `
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Bonus\TimeReward\TimeReward.md
+   缩进3格的行数=8, 4格行数=6, 含tab缩进的行数=0
+     例3格@行71:    - `_rewardAvailableOnStart == false`: в `Start()` сохраняется `UtcNow` → полн
+     例3格@行72:    - `_rewardAvailableOnStart == true`: награда доступна сразу, при первом `Take
+     例3格@行75:    - `elapsed = (now - lastRewardTime)`; `accumulated = floor(elapsed / cooldown
+     例3格@行76:    - `claimsToGive = CapToMaxPerTake(accumulated, _maxRewardsPerTake)` (−1 = все
+     例3格@行79:    - Вызывается `GetClaimableCount()` → выдаётся до этого количества наград;  
+     例3格@行80:    - `OnRewardClaimed` вызывается по разу за каждую награду, `OnRewardsClaimed(c
+     例3格@行81:    - При `_saveTimeOnTakeReward` время сдвигается: `lastRewardTime += claimsToGi
+     例3格@行84:    - Каждые `updateTime` сек (по умолчанию 0.2) вызывается `RefreshTimeState()`:
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Cards\Examples\Drunkard.md
+   缩进3格的行数=4, 4格行数=28, 含tab缩进的行数=0
+     例3格@行18:    - По умолчанию: сначала соперник, затем игрок (задержка настраивается)
+     例3格@行19:    - Можно поменять: сначала игрок, затем соперник
+     例3格@行56:    - **Deck Type** — тип для спрайтов (можно `Standard52` если хотите универсаль
+     例3格@行57:    - **Game Deck Type** — установите `Standard36` для классической «Пьяницы»
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Condition\NeoCondition.md
+   缩进3格的行数=21, 4格行数=0, 含tab缩进的行数=0
+     例3格@行17:    - **Component** — читать поле/свойство из компонента
+     例3格@行18:    - **GameObject** — читать свойство самого игрового объекта (activeSelf, tag, 
+     例3格@行23:    - **Constant** — сравнить с числом или текстом (задать порог)
+     例3格@行24:    - **Other Object** — сравнить с полем/свойством другого объекта (выбрать втор
+     例3格@行195:    - Condition [0]: Source=Component, Component = Health, Property = currentHeal
+     例3格@行196:    - Check Mode = EveryFrame
+     例3格@行197:    - On True → GameOverPanel.SetActive(true)
+     例3格@行203:    - Condition [0]: Source=Component, Component = ScoreManager, Property = Score
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Condition\NeoCondition_Editor_Roadmap.md
+   缩进3格的行数=17, 4格行数=4, 含tab缩进的行数=0
+     例3格@行136:    - член не найден;
+     例3格@行137:    - тип изменился;
+     例3格@行138:    - оператор не поддерживается.
+     例3格@行140:    - `Ping Source Object`;
+     例3格@行141:    - `Select Source Object`;
+     例3格@行142:    - `Open Script` (если возможно).
+     例3格@行144:    - текущие значения в play mode;
+     例3格@行145:    - подсветка условий, которые дают `false`.
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Editor\RainbowSignature.md
+   缩进3格的行数=5, 4格行数=4, 含tab缩进的行数=0
+     例3格@行88:    ```csharp
+     例3格@行89:    namespace Neo.Tools
+     例3格@行90:    {
+     例3格@行95:    }
+     例3格@行96:    ```
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Examples\AnomalyGame.md
+   缩进3格的行数=18, 4格行数=0, 含tab缩进的行数=0
+     例3格@行27:    - **Duration** = `21600` (6 × 3600 секунд).
+     例3格@行28:    - **Count Up** = `true`.
+     例3格@行29:    - **Looping** = `false`.
+     例3格@行30:    - **Time Scale** = множитель скорости игры (например, `24`, если 1 реальная м
+     例3格@行31:    - **Auto Start** = `true` (или запускайте по событию старта игры).
+     例3格@行43:    - **Use Random Duration** = `true`.
+     例3格@行44:    - **Random Duration Min** / **Max** = желаемый диапазон в секундах (например,
+     例3格@行45:    - **Looping** = `true`.
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\NeoxiderPages\README.md
+   缩进3格的行数=5, 4格行数=21, 含tab缩进的行数=0
+     例3格@行135:    - Если страница уже существует, новый ассет создан не будет — появится лог, и
+     例3格@行149:    - Ключ `PageId.Id` **генерируется автоматически из имени ассета**.
+     例3格@行161:    - `OpenPage` — открыть страницу по `targetPageId`
+     例3格@行162:    - `Back` — вернуться на предыдущую
+     例3格@行163:    - `CloseCurrent` — закрыть текущую
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\NPC\Navigation\NPCNavigation.md
+   缩进3格的行数=5, 4格行数=0, 含tab缩进的行数=0
+     例3格@行16:    - `NavMeshAgent`
+     例3格@行17:    - `Neoxider/NPC/NpcNavigation`
+     例3格@行19:    - `FollowTarget`
+     例3格@行20:    - `Patrol`
+     例3格@行21:    - `Combined`
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Quest\Scenarios.md
+   缩进3格的行数=6, 4格行数=0, 含tab缩进的行数=0
+     例3格@行107:    - `Accept` — принять квест,
+     例3格@行108:    - `CompleteObjective` — зачесть цель,
+     例3格@行109:    - `Fail` — провалить,
+     例3格@行110:    - `Restart` — перезапустить,
+     例3格@行111:    - `Reset` — сбросить один,
+     例3格@行112:    - `ResetAll` — сбросить всё.
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Save\SaveIdentityUtility.md
+   缩进3格的行数=4, 4格行数=0, 含tab缩进的行数=0
+     例3格@行25:    - пути сцены;
+     例3格@行26:    - пути объекта в иерархии;
+     例3格@行27:    - sibling index каждого узла пути;
+     例3格@行28:    - индекса компонента того же типа на объекте.
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\StateMachine\NoCode_StateMachine_Usage.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行85:    - **Context Slot** — с какого объекта читать: **Owner** = объект с `StateMach
+     例3格@行86:    - **Condition Entry** — как в NeoCondition: **Source Object оставьте пустым**
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Tools\Inventory\InventoryHand_Plan.md
+   缩进3格的行数=19, 4格行数=0, 含tab缩进的行数=0
+     例3格@行30:    Один объект (например, персонаж): **InventoryComponent**  
+     例3格@行31:    - Database (опционально), Save Key при необходимости.  
+     例3格@行32:    - **Max Unique Items = 1**, **Max Total Items = 1**.  
+     例3格@行33:    - Initial State — пусто или один стартовый предмет.
+     例3格@行36:    На том же объекте (или дочернем): **InventoryHand**  
+     例3格@行37:    - **Inventory** — ссылка на этот InventoryComponent.  
+     例3格@行38:    - **Hand Anchor** — Transform точки «руки» (куда ставится модель предмета).  
+     例3格@行39:    - **Selector** — не назначать.  
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Tools\Inventory\README.md
+   缩进3格的行数=6, 4格行数=2, 含tab缩进的行数=0
+     例3格@行34:    - `UseSaveIfExists` — приоритет save, иначе initial;
+     例3格@行35:    - `MergeSaveWithInitial` — merge initial + save;
+     例3格@行36:    - `InitialOnlyIgnoreSave` — только initial.
+     例3格@行38:    - укажите `Item Data` или `itemId`,
+     例3格@行39:    - настройте `Amount`,
+     例3格@行40:    - включите сбор через `Collect On Trigger 3D/2D` или вызывайте `Collect` чере
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Tools\Move\CursorLockController.md
+   缩进3格的行数=22, 4格行数=0, 含tab缩进的行数=0
+     例3格@行90:    - `Controller Enabled` — мастер-переключатель
+     例3格@行91:    - `Control Mode` — по умолчанию **AutomaticAndManual**
+     例3格@行92:    - доступны публичные методы `SetControllerEnabled(bool)`, `EnableController()
+     例3格@行97:    - по умолчанию `_allowCursorAccessKey = false`
+     例3格@行98:    - включайте его только если реально нужен shortcut доступа к курсору
+     例3格@行99:    - после включения `_allowCursorAccessKey = true`
+     例3格@行100:    - `_cursorAccessKey = Z` (или любая другая клавиша)
+     例3格@行101:    - `_cursorAccessKeyMode = HoldToShowCursor` или `ToggleShowCursor`
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Tools\Move\PlayerController2DAnimatorDriver.md
+   缩进3格的行数=6, 4格行数=0, 含tab缩进的行数=0
+     例3格@行36:    - `PlayerController2DPhysics`
+     例3格@行37:    - `Rigidbody2D`
+     例3格@行38:    - `Animator`
+     例3格@行41:    - `_animator`
+     例3格@行42:    - `_controller`
+     例3格@行43:    - `_rigidbody`
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Tools\Move\PlayerController2DPhysics.md
+   缩进3格的行数=10, 4格行数=0, 含tab缩进的行数=0
+     例3格@行31:    - `Rigidbody2D`
+     例3格@行32:    - `BoxCollider2D` (или другой 2D коллайдер)
+     例3格@行37:    - назначьте камеру в `_followCamera`
+     例3格@行38:    - включите `_followCameraEnabled`.
+     例3格@行86:    - `A/D` или `Left/Right` — движение
+     例3格@行87:    - `Shift` — бег
+     例3格@行88:    - `Space` — прыжок
+     例3格@行90:    - прыжок с края платформы (coyote);
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Tools\Move\PlayerController3DAnimatorDriver.md
+   缩进3格的行数=7, 4格行数=0, 含tab缩进的行数=0
+     例3格@行40:    - `PlayerController3DPhysics`
+     例3格@行41:    - `Rigidbody`
+     例3格@行42:    - `Animator`
+     例3格@行45:    - `_animator`
+     例3格@行46:    - `_controller`
+     例3格@行47:    - `_rigidbody`
+     例3格@行48:    - `_cameraTransform` (если нужен `CameraRelative`)
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Tools\Move\PlayerController3DPhysics.md
+   缩进3格的行数=19, 4格行数=3, 含tab缩进的行数=0
+     例3格@行47:    - `CapsuleCollider`
+     例3格@行48:    - `Rigidbody` (`Freeze Rotation` по X/Y/Z можно оставить выключенным, скрипт 
+     例3格@行54:    - `Horizontal`
+     例3格@行55:    - `Vertical`
+     例3格@行56:    - `Mouse X`
+     例3格@行57:    - `Mouse Y`
+     例3格@行58:    - `Jump`
+     例3格@行121:    - `Pause Look When Cursor Visible = true`
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Tools\Physics\README.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行52:    - Также доступен режим Direction (притяжение по направлению)
+FILE: H:\AI Files\CoreAI\Assets\NeoxiderTools\Docs\Tools\View\Selector.md
+   缩进3格的行数=4, 4格行数=0, 含tab缩进的行数=0
+     例3格@行131:    Если нужно заполнить один раз вручную — включите `_setChild` или нажмите `Ref
+     例3格@行228:    - Эффективный индекс `-1` означает "ничего не выбрано" и все элементы будут д
+     例3格@行229:    - Свойство `Item` и `GetSelectedItem()` вернут `null` при `effectiveIndex == 
+     例3格@行230:    - Используйте `GetCurrentBounds()` для получения допустимого диапазона индекс
+FILE: H:\AI Files\CoreAI\Assets\Plugins\RuntimeInspector\ThirdPartyNotices.txt
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=1
+     例tab@行3: '\t' 	1. Unity_ColorWheel (BSD 3-Clause)
+FILE: H:\AI Files\CoreAI\Assets\TextMesh Pro\Fonts\LiberationSans - OFL.txt
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=2
+     例tab@行2: '\t' 	with Reserved Font Arimo, Tinos and Cousine.
+     例tab@行4: '\t' 	with Reserved Font Name Liberation.
+FILE: H:\AI Files\CoreAI\Assets\_exampleGame\Unity_URP_Graphics_Quality.md
+   缩进3格的行数=9, 4格行数=0, 含tab缩进的行数=0
+     例3格@行30:    `Create -> Rendering -> URP Pipeline Asset`  
+     例3格@行31:    Different presets per platform: PC / mobile / WebGL - different shadows, rend
+     例3格@行34:    `Create -> Rendering -> URP Renderer Data`  
+     例3格@行35:    A separate renderer for a scene or mode (for example, without post-processing
+     例3格@行38:    `Create -> Volume Profile`  
+     例3格@行39:    A set of effects (fog, exposure, bloom). Assigned to a **Global Volume** or *
+     例3格@行42:    `Edit -> Project Settings -> Quality`  
+     例3格@行43:    This defines **Scriptable Render Pipeline Settings** (which URP Asset), **VSy
+FILE: H:\AI Files\CoreAI\Assets\_exampleGame\Docs\UNITY_SETUP.md
+   缩进3格的行数=13, 4格行数=0, 含tab缩进的行数=0
+     例3格@行13:    *or* Project: **`Assets/_exampleGame/Scenes/RogueliteArena.unity`** -> double
+     例3格@行59:    - In **Model Settings**: **Download model** or **Load model** -> select the m
+     例3格@行60:    - **Build** column: for release, usually one main model should be checked (se
+     例3格@行61:    - If GPU is available, increase **Num GPU Layers** (start with part of the la
+     例3格@行62:    - **Remote** on **LLM** - disabled for pure local mode.
+     例3格@行63:    - For debugging: **Log Level = All** (if this field exists in your package ve
+     例3格@行64:    - If **Download on Start** is enabled, wait for the first download; LLMUnity 
+     例3格@行66:    - **LLM** - reference to the **LLM** component on the same GameObject (alread
+FILE: H:\AI Files\CoreAI\dev-docs\LUA_VM_BENCHMARK_PLAN.md
+   缩进3格的行数=3, 4格行数=15, 含tab缩进的行数=0
+     例3格@行72:    killed with `EXCEEDED_HARD_LIMIT_STEPS`. You cannot run a 1e6–1e7 loop throug
+     例3格@行74:    makes the interpreter look far slower than it is. Including it measures "Core
+     例3格@行75:    not "the Lua-CSharp VM".
+FILE: H:\AI Files\CoreAI\dev-docs\MATERIALS_RESEARCH.md
+   缩进3格的行数=9, 4格行数=0, 含tab缩进的行数=0
+     例3格@行103:    types cross the line.
+     例3格@行105:    IMaterialHandle`; `MaterialContext` carries per-part color/transparency/refle
+     例3格@行106:    catalog entry tints per part. Handle is opaque (no `UnityEngine.Material` lea
+     例3格@行108:    override the whole provider, or partial: `catalog.Override(RobloxMaterial.Woo
+     例3格@行109:    per-part escape hatch via a `MaterialOverrideId` pointing at a project-regist
+     例3格@行111:    Shader Graphs, authored as a **`MaterialCatalog` ScriptableObject** (`{ Roblo
+     例3格@行112:    template, TextureTier, param defaults }`). Editing the SO = non-coder retheme
+     例3格@行113:    the interface is the seam.
+FILE: H:\AI Files\CoreAI\dev-docs\MOD_INSTANCE_OWNERSHIP_PLAN.md
+   缩进3格的行数=30, 4格行数=0, 含tab缩进的行数=0
+     例3格@行46:    at `:129-131`: "the Roblox surface … threads the owner mod id so created inst
+     例3格@行47:    ownership ledger" → calls `_roblox.Register(registry, effective, ownerModId)`
+     例3格@行49:    Builds the origin tag: `ownerModId != null ? OriginTag.FromMod(ownerModId) : 
+     例3格@行50:    (`:172-178`) and packs both into a `LuaCsRobloxModContext` (`:180-181`).
+     例3格@行52:    `_registry.CreateScripted(className, context.OwnerModId, context.OriginTag)`.
+     例3格@行237:    (`CoreAiModsInstaller.cs:155-225`, where both the concrete `LuaCsModRuntime` 
+     例3格@行238:    `robloxApi.Registry` are in scope), do:
+     例3格@行239:    ```
+FILE: H:\AI Files\CoreAI\dev-docs\MULTI_CHAT_PLAN.md
+   缩进3格的行数=68, 4格行数=7, 含tab缩进的行数=0
+     例3格@行46:    independent history, tools, and context budget. The dropdown in
+     例3格@行47:    `CoreAiChatPanel` proves role-switching works. Ship NPC chat as "one role per
+     例3格@行48:    persona / per NPC-archetype" first — no core change.
+     例3格@行50:    `ConversationId`) as the correlation key in the two consumers that today filt
+     例3格@行51:    by role only, so two live turns — even on the same role — stop cross-arming t
+     例3格@行52:    idle deadline and cross-rendering tool bubbles.
+     例3格@行54:    (deep).** Key history, stop/clear, and event streams on a conversation id
+     例3格@行55:    alongside `roleId`. This is the real refactor and underpins both same-role
+FILE: H:\AI Files\CoreAI\dev-docs\PERF_VS_ROBLOX.md
+   缩进3格的行数=16, 4格行数=0, 含tab缩进的行数=0
+     例3格@行19:    with a GC is slower per instruction — often several ×. If a game does heavy p
+     例3格@行20:    Roblox wins.
+     例3格@行27:    lifting (rendering, physics, animation, particles, pathfinding) is compiled. 
+     例3格@行28:    and call fast C# systems, the Lua-VM gap barely shows — the frame is dominate
+     例3格@行29:    interpreter. Our sample mods already do this (a Heartbeat that moves a handfu
+     例3格@行31:    *zero-allocation* (pooled hook, sampled instruction counter, no per-call `Sto
+     例3格@行32:    cost of *calling into* the engine from Lua is cheap — the thing that matters 
+     例3格@行34:    grids) into C# **Burst/Jobs/DOTS** and they run at native speed across cores 
+FILE: H:\AI Files\CoreAI\Docs\ARCHITECTURE_RULES.md
+   缩进3格的行数=2, 4格行数=7, 含tab缩进的行数=0
+     例3格@行70:    architecture-fitness test (see §5) — the seam-honesty test
+     例3格@行71:    (`ScriptingSeamHonestyEditModeTests`) is the template.
+FILE: H:\AI Files\CoreAI\Docs\ROADMAP.md
+   缩进3格的行数=16, 4格行数=0, 含tab缩进的行数=0
+     例3格@行261:    script, line, a stable code, and a suggested fix — the reader is an agent tha
+     例3格@行262:    immediately patch the mod. The AI skill document *is* the documentation.
+     例3格@行264:    debugging are core features. Every feature answers "does this work in a built
+     例3格@行265:    on device, mid-session?" (RUNTIME-first, `AGENTS.md`).
+     例3格@行267:    tiers, routing profiles, host profiles — never hardcoded behavior. Embedding 
+     例3格@行268:    else's game is a config drop, not a fork.
+     例3格@行270:    Roblox reference; every intentional deviation is a numbered DEV item in the r
+     例3格@行271:    never a silent difference.
+FILE: H:\AI Files\CoreAI\Docs\TOKENS_PER_SEC_FIX_PLAN.md
+   缩进3格的行数=91, 4格行数=22, 含tab缩进的行数=0
+     例3格@行33:    In `GameCreationBenchmarkHarness.SessionCapturingLlmClient`, `GenerationMs` i
+     例3格@行35:    - start: immediately before `_inner.CompleteAsync(request, cancellationToken)
+     例3格@行36:    - stop: immediately after the task returns
+     例3格@行38:    For streaming, it wraps the whole stream enumeration:
+     例3格@行40:    - start: before `await foreach`
+     例3格@行41:    - stop: after the stream completes
+     例3格@行43:    That means the current metric is "provider call wall time" for each model tur
+     例3格@行47:    The current comments in both `GameCreationBenchmarkHarness.cs` and `Benchmark
+FILE: H:\AI Files\CoreAI\Docs\CoreAI\agent-vision.md
+   缩进3格的行数=3, 4格行数=0, 含tab缩进的行数=0
+     例3格@行160:    exposes `CameraLlmTool.TryGetImageDataUrl(resultJson, out string dataUrl)` an
+     例3格@行161:    `CameraLlmTool.TryParseImageDataUrl(dataUrl, out DataContent image)` for exac
+     例3格@行163:    into `image_url`.
+FILE: H:\AI Files\CoreAI\Docs\CoreAI\AGENT_ROLES_AND_TOOLS.md
+   缩进3格的行数=34, 4格行数=0, 含tab缩进的行数=0
+     例3格@行14:    (`MemoryLlmTool`) unless explicitly disabled, because `RoleMemoryConfig.UseMe
+     例3格@行15:    `true` for all built-in roles in the constructor
+     例3格@行16:    (`Assets/CoreAI/Runtime/Core/Features/AgentMemory/AgentMemoryPolicy.cs:313-36
+     例3格@行17:    `GetToolsForRole` (`AgentMemoryPolicy.cs:646-671`) is what any caller (orches
+     例3格@行18:    actually queries at request time; it prepends `memory` to whatever custom too
+     例3格@行19:    `AddToolForRole`/`SetToolsForRole`.
+     例3格@行21:    `AgentMemoryPolicy.AddToolForRole(roleId, tool)`
+     例3格@行22:    (`Assets/CoreAI/Runtime/Core/Features/AgentMemory/AgentMemoryPolicy.cs:59-77`
+FILE: H:\AI Files\CoreAI\Docs\CoreAIMods\mod-system.md
+   缩进3格的行数=3, 4格行数=0, 含tab缩进的行数=0
+     例3格@行218:    inactive-count; recompute only on `ModSourceLoaded`/`ModSourceUnloaded` and a
+     例3格@行219:    `OnGUI`. Remove all store enumeration and `ReadMetadata`/`Split` from the dra
+     例3格@行221:    when the file changed (mtime/dirty flag), instead of `ClearAll` + full read o
+FILE: H:\AI Files\CoreAI\Docs\CoreAIMods\MOD_SHARING.md
+   缩进3格的行数=5, 4格行数=16, 含tab缩进的行数=0
+     例3格@行153:    status line confirms `Copied '<id>' export bundle to clipboard.`
+     例3格@行155:    Recommended file name: `<id>.coreai-mod.json` (any name works — import reads 
+     例3格@行156:    clipboard, not files).
+     例3格@行163:    list. On failure the status line explains why (empty clipboard, malformed JSO
+     例3格@行164:    `source`, missing `manifest.Id`, or a Lua load error).
+FILE: H:\AI Files\CoreAI\Docs\CoreAIMods\ROBLOX_API_ROADMAP.md
+   缩进3格的行数=31, 4格行数=148, 含tab缩进的行数=0
+     例3格@行51:    docs, error messages, and logs are optimized for machine consumption and self
+     例3格@行52:    Every error a mod can trigger carries: mod id, script, line, a stable error c
+     例3格@行53:    *suggested fix* — because the reader is an agent that will immediately try to
+     例3格@行54:    The AI's skill document **is** the documentation (§MVP6): one artifact teache
+     例3格@行55:    human, and embeds the machine-readable implemented-vs-stub manifest generated
+     例3格@行57:    Hot reload, live logs, and in-play AI debugging are core features, not toolin
+     例3格@行58:    feature must answer "does this work in a built player on device, mid-session?
+     例3格@行59:    `AGENTS.md` — RUNTIME-first).
+FILE: H:\AI Files\CoreAI\Docs\CoreAIMods\RobloxReference\02_MULTIPLAYER_REPLICATION.md
+   缩进3格的行数=13, 4格行数=0, 含tab缩进的行数=0
+     例3格@行43:    movement state: "as players move their characters, certain `Humanoid` propert
+     例3格@行44:    states, are communicated to the server, which passes this information to othe
+     例3格@行45:    clients."
+     例3格@行144:    the runtime data model"); with streaming enabled only a nearby subset of `Wor
+     例3格@行490:    Instance is expected: "exploiters may … send tables in place of an Instance …
+     例3格@行491:    can mimic what would be an otherwise ordinary object reference." For instance
+     例3格@行492:    AND expected location: `typeof(item) == "Instance" and item:IsDescendantOf(ex
+     例3格@行494:    allowing it to subtly bypass logical checks" (`n ~= n` detects NaN; `math.abs
+FILE: H:\AI Files\CoreAI\Library\PackageCache\ai.undream.llm@2c30b44020c7\CONTRIBUTING.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行73:    often it happens
+FILE: H:\AI Files\CoreAI\Library\PackageCache\ai.undream.llm@2c30b44020c7\LICENSE.md
+   缩进3格的行数=21, 4格行数=0, 含tab缩进的行数=0
+     例3格@行5:    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+     例3格@行7:    1. Definitions.
+     例3格@行66:    2. Grant of Copyright License. Subject to the terms and conditions of
+     例3格@行73:    3. Grant of Patent License. Subject to the terms and conditions of
+     例3格@行89:    4. Redistribution. You may reproduce and distribute copies of the
+     例3格@行130:    5. Submission of Contributions. Unless You explicitly state otherwise,
+     例3格@行138:    6. Trademarks. This License does not grant permission to use the trade
+     例3格@行143:    7. Disclaimer of Warranty. Unless required by applicable law or
+FILE: H:\AI Files\CoreAI\Library\PackageCache\ai.undream.llm@2c30b44020c7\.github\doxygen\header.html
+   缩进3格的行数=9, 4格行数=7, 含tab缩进的行数=0
+     例3格@行49:    <div id="projectname">$projectname
+     例3格@行50:    <!--BEGIN PROJECT_NUMBER-->&#160;<span id="projectnumber">$projectnumber</spa
+     例3格@行51:    </div>
+     例3格@行52:    <!--BEGIN PROJECT_BRIEF--><div id="projectbrief">$projectbrief</div><!--END P
+     例3格@行56:    <!--BEGIN PROJECT_BRIEF-->
+     例3格@行60:    <!--END PROJECT_BRIEF-->
+     例3格@行63:    <!--BEGIN SEARCHENGINE-->
+     例3格@行64:    <td>$searchbox</td>
+FILE: H:\AI Files\CoreAI\Library\PackageCache\ai.undream.llm@2c30b44020c7\Samples~\RAG\hamlet_project_gutenberg.txt
+   缩进3格的行数=105, 4格行数=11, 含tab缩进的行数=0
+     例3格@行2021:    Doubt truth to be a liar,
+     例3格@行2510:    ’One fair daughter, and no more,
+     例3格@行2511:    The which he loved passing well.’
+     例3格@行2531:    As by lot, God wot,
+     例3格@行2533:    It came to pass, as most like it was.
+     例3格@行2565:    _The rugged Pyrrhus, like th’ Hyrcanian beast,—_
+     例3格@行2567:    _The rugged Pyrrhus, he whose sable arms,
+     例3格@行2568:    Black as his purpose, did the night resemble
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.coplaydev.unity-mcp@ad8beff3ad46\README.md
+   缩进3格的行数=3, 4格行数=11, 含tab缩进的行数=0
+     例3格@行16:    - Select the packaged server folder (`Server`) if you want to run the bundled
+     例3格@行17:    - Install Python and/or uv/uvx if missing so the server can be managed locall
+     例3格@行18:    - For Claude Code, ensure the `claude` CLI is installed.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Cookbook.md
+   缩进3格的行数=8, 4格行数=0, 含tab缩进的行数=0
+     例3格@行27:    - `_moneySave = "Energy"` — its own save key, separate from the main currency
+     例3格@行28:    - `_persistMoney = true`;
+     例3格@行29:    - **`_maxMoney = 30`** — the soft cap.
+     例3格@行31:    - `_cooldownSeconds = 120` (2 minutes);
+     例3格@行32:    - **`_autoClaim = true`** — auto-claims the reward when available (continuous
+     例3格@行33:    - `_startTakeReward = true` — claim **offline** accumulation on start;
+     例3格@行34:    - `_maxRewardsPerTake = -1` — grant all accumulated at once (after a long abs
+     例3格@行35:    - `_addKey = "EnergyRegen"` — a separate timer save key.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\GettingStarted.md
+   缩进3格的行数=3, 4格行数=6, 含tab缩进的行数=0
+     例3格@行31:    ```
+     例3格@行32:    https://github.com/NeoXider/NeoxiderTools.git?path=Assets/Neoxider
+     例3格@行33:    ```
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\VampireSurvivor_Guide.md
+   缩进3格的行数=7, 4格行数=0, 含tab缩进的行数=0
+     例3格@行54:    - `NPC_Navigation` — for chasing the target.
+     例3格@行55:    - `RpgCharacter` — for health (tag `Enemy`).
+     例3格@行56:    - `RpgContactDamage` — for dealing damage on contact with the player.
+     例3格@行57:    - `DemoNpcUI` — for automatic HP bar creation.
+     例3格@行80:    - On level up: `Time.timeScale = 0`.
+     例3格@行81:    - Show the card selection UI. Add a new weapon object (Step 2) or a buff to `
+     例3格@行82:    - Restore `Time.timeScale = 1`.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Abilities\README.md
+   缩进3格的行数=2, 4格行数=17, 含tab缩进的行数=0
+     例3格@行44:    - **Auto:** add an [AbilityAutoCaster](./AbilityAutoCaster.md) — every grante
+     例3格@行45:    - **On demand:** add an [AbilityNoCodeAction](./AbilityNoCodeAction.md) (e.g.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Abilities\SurvivorDemo.md
+   缩进3格的行数=15, 4格行数=0, 含tab缩进的行数=0
+     例3格@行19:    `<Demo sample>/Scenes/SurvivorDemo.unity`.
+     例3格@行23:    homing bolt that strikes the nearest enemy.
+     例3格@行27:    **Play Again** to restart the same scene instantly (no reload).
+     例3格@行119:    *Create -> Neoxider -> Survivor Demo -> Config*). This asset *is* your game.
+     例3格@行121:    (a `health` pool, `move_speed` base property; the hero also needs `mana` if a
+     例3格@行122:    cost). Put the hero on one team id and enemies on another.
+     例3格@行124:    abilities (e.g. a homing bolt) auto-aim at the nearest enemy; NoTarget abilit
+     例3格@行125:    area bursts around the hero. For projectiles set a Projectile delivery + an a
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Condition\NeoCondition_Editor_Roadmap.md
+   缩进3格的行数=17, 4格行数=4, 含tab缩进的行数=0
+     例3格@行136:    - member not found;
+     例3格@行137:    - type has changed;
+     例3格@行138:    - operator not supported.
+     例3格@行140:    - `Ping Source Object`;
+     例3格@行141:    - `Select Source Object`;
+     例3格@行142:    - `Open Script` (if possible).
+     例3格@行144:    - current values in play mode;
+     例3格@行145:    - highlighting of conditions that evaluate to `false`.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Editor\RainbowSignature.md
+   缩进3格的行数=5, 4格行数=0, 含tab缩进的行数=0
+     例3格@行98:    ```csharp
+     例3格@行99:    namespace Neo.Tools
+     例3格@行100:    {
+     例3格@行105:    }
+     例3格@行106:    ```
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Examples\AnomalyGame.md
+   缩进3格的行数=18, 4格行数=0, 含tab缩进的行数=0
+     例3格@行27:    - **Duration** = `21600` (6 × 3600 seconds).
+     例3格@行28:    - **Count Up** = `true`.
+     例3格@行29:    - **Looping** = `false`.
+     例3格@行30:    - **Time Scale** = game speed multiplier (e.g., `24` if 1 real minute = 24 in
+     例3格@行31:    - **Auto Start** = `true` (or start it on the game start event).
+     例3格@行43:    - **Use Random Duration** = `true`.
+     例3格@行44:    - **Random Duration Min** / **Max** = desired range in seconds (e.g., 5–30).
+     例3格@行45:    - **Looping** = `true`.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Network\Multiplayer_Guide.md
+   缩进3格的行数=5, 4格行数=0, 含tab缩进的行数=0
+     例3格@行133:    spawn a row per `NeoLobbyManager.OnPlayerJoinedRoom`, remove on `OnPlayerLeft
+     例3格@行134:    (or rebuild on `OnPlayerCountChanged`).
+     例3格@行136:    to `OnReadyChanged`.
+     例3格@行138:    host calls the room-manager scene change; `OnGameSceneLoaded` → `PM.I.ChangeP
+     例3格@行141:    open `PageLobby`.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Quest\Scenarios.md
+   缩进3格的行数=6, 4格行数=0, 含tab缩进的行数=0
+     例3格@行102:    - `Accept` — accept a quest
+     例3格@行103:    - `CompleteObjective` — complete an objective
+     例3格@行104:    - `Fail` — fail a quest
+     例3格@行105:    - `Restart` — restart a quest
+     例3格@行106:    - `Reset` — reset one quest
+     例3格@行107:    - `ResetAll` — reset all quests
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Rpg\RpgCharacter.md
+   缩进3格的行数=8, 4格行数=0, 含tab缩进的行数=0
+     例3格@行169:    - `id = "BigHpBoost"`, `duration = 60`
+     例3格@行170:    - `Modifiers[0]`: `BuffStatType = AddResourceMaxFlat`, `TargetId = Hp`, `Valu
+     例3格@行172:    - `Action = InvokeComponentMethod`, `Component = RpgCharacter`, `Method = App
+     例3格@行211:    upgradePoints / isDead / invulLocks into one snapshot string. Clients receive
+     例3格@行212:    `[SyncVar(hook)]` and restore local state.
+     例3格@行215:    `NeoNetworkComponent`) applies the latest snapshot.
+     例3格@行229:    - resources: HP 80, Stamina 50
+     例3格@行230:    - stats: Strength 10, Defense 5
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Save\SaveIdentityUtility.md
+   缩进3格的行数=4, 4格行数=0, 含tab缩进的行数=0
+     例3格@行18:    - scene path or scene name;
+     例3格@行19:    - hierarchy path;
+     例3格@行20:    - sibling index for every transform level;
+     例3格@行21:    - index of the component among components of the same type on the GameObject.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\StateMachine\NoCode_StateMachine_Usage.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行89:    - **Context Slot** — which object to read from: **Owner** = the object with t
+     例3格@行90:    - **Condition Entry** — same as in NeoCondition: **leave Source Object empty*
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Docs\Tools\Inventory\ShopInventoryGrantBridge.md
+   缩进3格的行数=3, 4格行数=3, 含tab缩进的行数=0
+     例3格@行17:    - `Shop Item Id` — stable `ShopItemData.Id`.
+     例3格@行18:    - `Inventory Item` — matching `InventoryItemData`.
+     例3格@行19:    - `Amount` — units granted per purchase (≥ 1).
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.neoxider.tools@443db79efa10\Skill\neoxider-tools\SKILL.md
+   缩进3格的行数=18, 4格行数=0, 含tab缩进的行数=0
+     例3格@行131:    `Packages/manifest.json`. If absent, this skill doesn't apply.
+     例3格@行133:    Any class with a `[NeoDoc("X.md")]` attribute points to `Assets/Neoxider/Docs
+     例3格@行134:    authoritative doc.
+     例3格@行136:    calling them. Namespaces are `Neo.<Module>` (e.g. `Neo.Audio`, `Neo.Save`, `N
+     例3格@行137:    `Neo.Extensions`, `Neo.Tools`). Verify the API against the real code — don't 
+     例3格@行139:    `[CreateFromMenu("Neoxider/...")]`. Singleton managers are reached via `TypeN
+     例3格@行140:    `SaveManager.I`, `PoolManager.I`).
+     例3格@行142:    (Ability Designer, Dialogue Editor, Prefab To Sprite, Create Neoxider Object)
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.ai.navigation@734c2c4c5591\Documentation~\NavMeshAgent.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行9:    <br/>The NavMesh Agent component is displayed in the Inspector window.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.burst@6bb9aca3ef38\Third Party Notices.md
+   缩进3格的行数=24, 4格行数=3, 含tab缩进的行数=0
+     例3格@行83:    list of conditions and the following disclaimer.
+     例3格@行86:    this list of conditions and the following disclaimer in the documentation 
+     例3格@行87:    and/or other materials provided with the distribution.
+     例3格@行214:    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+     例3格@行216:    1. Definitions.
+     例3格@行275:    2. Grant of Copyright License. Subject to the terms and conditions of
+     例3格@行282:    3. Grant of Patent License. Subject to the terms and conditions of
+     例3格@行298:    4. Redistribution. You may reproduce and distribute copies of the
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.burst@6bb9aca3ef38\Documentation~\csharp-string-support.md
+   缩进3格的行数=1, 4格行数=28, 含tab缩进的行数=0
+     例3格@行19:    ```
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.burst@6bb9aca3ef38\Documentation~\debugging-profiling-tools.md
+   缩进3格的行数=0, 4格行数=17, 含tab缩进的行数=8
+     例tab@行87: '\t' 	public struct Spot
+     例tab@行88: '\t' 	{
+     例tab@行89: '\t\t' 		public struct SubSpot
+     例tab@行90: '\t\t' 		{
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8\Third Party Notices.md
+   缩进3格的行数=25, 4格行数=0, 含tab缩进的行数=0
+     例3格@行48:    claim that you wrote the original software. If you use this software
+     例3格@行49:    in a product, an acknowledgment in the product documentation would be
+     例3格@行50:    appreciated but is not required.
+     例3格@行52:    misrepresented as being the original software.
+     例3格@行116:    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+     例3格@行118:    1. Definitions.
+     例3格@行177:    2. Grant of Copyright License. Subject to the terms and conditions of
+     例3格@行184:    3. Grant of Patent License. Subject to the terms and conditions of
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8\Documentation~\GetStartedNewRepository.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行13:    ![version control window](images/AccessingUnityVersionControl.png)
+     例3格@行16:    ![Onboarding](images/Onboarding.png)
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8\Lib\Editor\Localization\cm-help.es.txt
+   缩进3格的行数=36, 4格行数=3369, 含tab缩进的行数=0
+     例3格@行3139:    Se muestra información acerca de la fecha de expiración, usuarios activos y
+     例3格@行3140:    no activos, etc.
+     例3格@行3144:    cm licenseinfo
+     例3格@行3145:    cm licenseinfo --server=myserver:8084
+     例3格@行3146:    cm licenseinfo --sort=name
+     例3格@行4170:    Este comando borra una o más ramas.
+     例3格@行4231:    cm branch rename /main/task0 task1
+     例3格@行4232:    (Renombra la rama '/main/task0' a '/main/task1'.)
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8\Lib\Editor\Localization\plastic-gui.en.txt
+   缩进3格的行数=1, 4格行数=10, 含tab缩进的行数=0
+     例3格@行3003:    {0} of {1}
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8\Lib\Editor\Localization\plastic-gui.es.txt
+   缩进3格的行数=1, 4格行数=11, 含tab缩进的行数=0
+     例3格@行2997:    {0} of {1}
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8\Lib\Editor\Localization\plastic-gui.ja.txt
+   缩进3格的行数=1, 4格行数=1, 含tab缩进的行数=0
+     例3格@行2456:    {0}/{1}
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8\Lib\Editor\Localization\plastic-gui.ko.txt
+   缩进3格的行数=1, 4格行数=1, 含tab缩进的行数=0
+     例3格@行2456:    {0}/{1}
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8\Lib\Editor\Localization\plastic-gui.zh-Hans.txt
+   缩进3格的行数=1, 4格行数=1, 含tab缩进的行数=0
+     例3格@行2456:    {0} / {1}
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8\Lib\Editor\Localization\plastic-gui.zh-Hant.txt
+   缩进3格的行数=1, 4格行数=1, 含tab缩进的行数=0
+     例3格@行2456:    {1} 之 {0}
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collections@12999e356c23\CHANGELOG.md
+   缩进3格的行数=33, 4格行数=12, 含tab缩进的行数=0
+     例3格@行824:    release of unmanaged resources.
+     例3格@行826:    and `UnsafePtrList`.
+     例3格@行830:    compatible with the `FixedString*` methods.  Allocating a `HeapString` requir
+     例3格@行831:    specifying an allocator and disposing appropriately.
+     例3格@行857:    used allocated count only to report emptiness, but returning not-empty didn't
+     例3格@行858:    meant that `*HashMap` is not empty.
+     例3格@行871:    `*WithBeginEnd` in name signifies that arguments are begin/end instead of mor
+     例3格@行872:    `InsertRange`, `RemoveRangeSwapBack`, and `RemoveRange` are completely deprec
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.collections@12999e356c23\Unity.Collections.PerformanceTests\Unity.PerformanceTesting.Benchmark\README.md
+   缩进3格的行数=4, 4格行数=32, 含tab缩进的行数=0
+     例3格@行122:    - `BenchmarkMeasure.Measure` handles selecting the code path for either the P
+     例3格@行123:    - Setup and Teardown calls are *not* timed and measured.
+     例3格@行124:    - Burst compiled (and any other) variants of a single test implementation isn
+     例3格@行125:    - External comparison values such as `MyExampleConfig.BCL` will never be call
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.ide.visualstudio@dc1ddd4f09b6\ValidationConfig.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=17
+     例tab@行2: '\t' 	"FileContentKeywordValidation":
+     例tab@行3: '\t' 	{
+     例tab@行4: '\t\t' 		"Keywords":
+     例tab@行5: '\t\t' 		[
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.ide.visualstudio@dc1ddd4f09b6\Editor\COMIntegration\COMIntegration~\BStrHolder.h
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=27
+     例tab@行6: '\t' 	BStrHolder() :
+     例tab@行7: '\t\t' 		m_Str(NULL)
+     例tab@行8: '\t' 	{
+     例tab@行9: '\t' 	}
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.ide.visualstudio@dc1ddd4f09b6\Editor\COMIntegration\COMIntegration~\ComPtr.h
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=146
+     例tab@行5: '\t' 	template<typename T>
+     例tab@行6: '\t' 	class ComPtr;
+     例tab@行8: '\t' 	template<typename T>
+     例tab@行9: '\t' 	class ComPtrRef
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.inputsystem@21a28c3a6c83\CHANGELOG.md
+   缩进3格的行数=5, 4格行数=110, 含tab缩进的行数=0
+     例3格@行952:    ```CSharp
+     例3格@行953:    // Force XInputWindows gamepads to not run in the background.
+     例3格@行954:    InputSystem.RegisterLayoutOverride(@"
+     例3格@行960:    ");
+     例3格@行961:    ```
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.inputsystem@21a28c3a6c83\Documentation~\Events.md
+   缩进3格的行数=3, 4格行数=17, 含tab缩进的行数=0
+     例3格@行75:    (eventPtr, device) =>
+     例3格@行76:    {
+     例3格@行78:    };
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.inputsystem@21a28c3a6c83\Samples~\UnityRemote\README.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行12:    ![Unity Remote Settings](./UnityRemoteSettings.png)
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.mathematics@19a9377c4ffa\Documentation~\4x4-matrices.md
+   缩进3格的行数=13, 4格行数=0, 含tab缩进的行数=0
+     例3格@行10:    var c0 = new float4(1.0f, 0.0f, 0.0f, 0.0f);
+     例3格@行11:    var c1 = new float4(0.0f, 1.0f, 0.0f, 0.0f);
+     例3格@行12:    var c2 = new float4(0.0f, 0.0f, 1.0f, 0.0f);
+     例3格@行13:    var c3 = new float4(0.0f, 0.0f, 0.0f, 1.0f);
+     例3格@行14:    var m = new float4x4(c0, c1, c2, c3);
+     例3格@行26:    float4x4 result = f4x4_Ones * f4x4_HalfIdentity;
+     例3格@行27:    // result:
+     例3格@行28:    // 0.5, 0.0, 0.0, 0.0,
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.mathematics@19a9377c4ffa\Documentation~\quaternion-multiplication.md
+   缩进3格的行数=4, 4格行数=0, 含tab缩进的行数=0
+     例3格@行9:    var axis = new float3(0.0f, 1.0f, 0.0f);
+     例3格@行10:    var q = quaternion.AxisAngle(axis,math.radians(45.0f));
+     例3格@行11:    var orientation = quaternion.Euler(
+     例3格@行15:    var result = math.mul(q, orientation);
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.mathematics@19a9377c4ffa\Documentation~\random-numbers.md
+   缩进3格的行数=7, 4格行数=0, 含tab缩进的行数=0
+     例3格@行11:    // Choose some non-zero seed and set up the random number generator state.
+     例3格@行12:    uint seed = 1;
+     例3格@行13:    Unity.Mathematics.Random rng = new Unity.Mathematics.Random(seed);
+     例3格@行15:    // [0, 1) exclusive
+     例3格@行16:    float randomFloat1 = rng.NextFloat();
+     例3格@行18:    // [-5, 5) exclusive
+     例3格@行19:    float randomFloat2 = rng.NextFloat(-5.0f, 5.0f);
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.mathematics@19a9377c4ffa\Documentation~\vector-multiplication.md
+   缩进3格的行数=4, 4格行数=0, 含tab缩进的行数=0
+     例3格@行9:    var v0 = new float4(2.0f, 4.0f, 6.0f, 8.0f);
+     例3格@行10:    var v1 = new float4(1.0f, -1.0f, 1.0f, -1.0f);
+     例3格@行11:    var result = v0 * v1;
+     例3格@行12:    // result == new float4(2.0f, -4.0f, 6.0f, -8.0f).
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.multiplayer.center.quickstart@c025a98340af\Samples~\Example\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=3
+     例tab@行2: '\t' 	"displayName":"Example Sample",
+     例tab@行3: '\t' 	"description": "Replace this string with your own descripti
+     例tab@行4: '\t' 	"createSeparatePackage": false
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.multiplayer.center.quickstart@c025a98340af\Tests\.tests.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=1
+     例tab@行2: '\t' 	"createSeparatePackage": false
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.multiplayer.center@f01f4ba8d00a\Samples~\Example\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=3
+     例tab@行2: '\t' 	"displayName":"Example Sample",
+     例tab@行3: '\t' 	"description": "Replace this string with your own descripti
+     例tab@行4: '\t' 	"createSeparatePackage": false
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.multiplayer.center@f01f4ba8d00a\Tests\.tests.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=1
+     例tab@行2: '\t' 	"createSeparatePackage": false
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.multiplayer.playmode@d8888f6ed6aa\CHANGELOG.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行56:    - An android build profile can now be added in the Scenario Configuration win
+     例3格@行57:    - This works for both Android based phones and Android based XR devices
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.multiplayer.tools@acc3b25185bb\Documentation~\runtime-stats-monitor.md
+   缩进3格的行数=5, 4格行数=14, 含tab缩进的行数=0
+     例3格@行22:    1. Selecting **Add Component** in the **Inspector** tab, you can start typing
+     例3格@行24:    OR
+     例3格@行26:    2. Selecting **Add Component** in the **Inspector** tab, navigate to **Netcod
+     例3格@行28:    OR
+     例3格@行30:    3. From the top menu bar, go to **Component** > **Netcode** > **RuntimeNetSta
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.netcode.gameobjects@60c1d83693e8\Documentation~\advanced-topics\physics.md
+   缩进3格的行数=2, 4格行数=78, 含tab缩进的行数=0
+     例3格@行44:    - Add to the player's overall mass.
+     例3格@行45:    - Extend the collision boundary of the player.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.netcode.gameobjects@60c1d83693e8\Documentation~\advanced-topics\serialization\serialization-arrays.md
+   缩进3格的行数=4, 4格行数=7, 含tab缩进的行数=0
+     例3格@行71:    1. From the Unity Editor top bar menu, go to **Edit** > **Project Settings...
+     例3格@行72:    2. Select the **Other Settings** dropdown.
+     例3格@行73:    3. Scroll to **Script Compilation** > **Scripting Define Symbols**.
+     例3格@行74:    4. Add `UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT`.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.netcode.gameobjects@60c1d83693e8\Documentation~\basics\scenemanagement\inscene-placed-networkobjects.md
+   缩进3格的行数=3, 4格行数=17, 含tab缩进的行数=0
+     例3格@行13:    - For example, a heads up display (HUD) that includes information about other
+     例3格@行14:    - Or some form of platform or teleporter that moves a player from one locatio
+     例3格@行270:    - These transform changes will be synchronized with clients via the `ParentSy
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.netcode.gameobjects@60c1d83693e8\Documentation~\learn\distributed-authority-quick-start.md
+   缩进3格的行数=18, 4格行数=30, 含tab缩进的行数=0
+     例3格@行56:    private string _profileName;
+     例3格@行57:    private string _sessionName;
+     例3格@行58:    private int _maxPlayers = 10;
+     例3格@行59:    private ConnectionState _state = ConnectionState.Disconnected;
+     例3格@行60:    private ISession _session;
+     例3格@行61:    private NetworkManager m_NetworkManager;
+     例3格@行63:    private enum ConnectionState
+     例3格@行64:    {
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.netcode.gameobjects@60c1d83693e8\Documentation~\learn\faq.md
+   缩进3格的行数=3, 4格行数=0, 含tab缩进的行数=0
+     例3格@行28:    It should work just like over LAN you just have to connect to the public IP i
+     例3格@行32:    [Unity Relay](https://docs.unity.com/relay/introduction.html) offers a way fo
+     例3格@行34:    Another option is to use something like the `SteamP2PTransport`, which will w
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.netcode.gameobjects@60c1d83693e8\Documentation~\tutorials\command-line-helper.md
+   缩进3格的行数=7, 4格行数=1, 含tab缩进的行数=0
+     例3格@行27:    private NetworkManager netManager;
+     例3格@行29:    void Start()
+     例3格@行30:    {
+     例3格@行53:    }
+     例3格@行55:    private Dictionary<string, string> GetCommandlineArgs()
+     例3格@行56:    {
+     例3格@行73:    }
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.netcode.gameobjects@60c1d83693e8\Documentation~\tutorials\helloworld.md
+   缩进3格的行数=8, 4格行数=0, 含tab缩进的行数=0
+     例3格@行82:    This will create an  empty GameObject with NetworkManager as its parent.
+     例3格@行102:    private NetworkManager netManager;
+     例3格@行104:    void Start()
+     例3格@行105:    {
+     例3格@行128:    }
+     例3格@行130:    private Dictionary<string, string> GetCommandlineArgs()
+     例3格@行131:    {
+     例3格@行148:    }
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.netcode.gameobjects@60c1d83693e8\Documentation~\tutorials\testing\testing_with_artificial_conditions.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行125:    - Since Clumsy doesn't have Jitter functionality - we can emulate jitter (inc
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.render-pipelines.core@02dfbe8e43de\Documentation~\srp-creating-simple-render-loop.md
+   缩进3格的行数=0, 4格行数=15, 含tab缩进的行数=1
+     例tab@行52: '\t' 	float4x4 unity_MatrixVP;
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.render-pipelines.core@02dfbe8e43de\Samples~\RendererShaderUserValue_Common\Settings\AgoraSampleDescription.json
+   缩进3格的行数=0, 4格行数=2, 含tab缩进的行数=14
+     例tab@行3: '\t' 	"""Welcome to the Renderer Shader User Value Samples.
+     例tab@行4: '\t' 	The <a href="https://docs.unity3d.com/6000.3/Documentation/
+     例tab@行6: '\t' 	This scene demonstrates the use of Shader User Value with m
+     例tab@行8: '\t' 	<i>To ensure the project is set up correctly, check whether
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.render-pipelines.core@02dfbe8e43de\Samples~\RendererShaderUserValue_Common\Settings\LookDevSampleDescription.json
+   缩进3格的行数=0, 4格行数=2, 含tab缩进的行数=25
+     例tab@行3: '\t' 	"""Welcome to the Renderer Shader User Value Samples.
+     例tab@行4: '\t' 	The <a href="https://docs.unity3d.com/6000.3/Documentation/
+     例tab@行6: '\t' 	This scene showcases the use of Renderer Shader User Values
+     例tab@行8: '\t' 	<i>To ensure the project is set up correctly, check whether
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.render-pipelines.core@02dfbe8e43de\Tests\.tests.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=1
+     例tab@行2: '\t' 	"createSeparatePackage": false
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.render-pipelines.universal-config@8dc1aab4af1d\Tests\.tests.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=1
+     例tab@行2: '\t' 	"createSeparatePackage": false
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.render-pipelines.universal@3b809f23691d\Third Party Notices.md
+   缩进3格的行数=5, 4格行数=0, 含tab缩进的行数=0
+     例3格@行16:    notice, this list of conditions and the following disclaimer.
+     例3格@行18:    notice, this list of conditions and the following disclaimer in the
+     例3格@行19:    documentation and/or other materials provided with the distribution.
+     例3格@行21:    contributors may be used to endorse or promote products derived
+     例3格@行22:    from this software without specific prior written permission.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.render-pipelines.universal@3b809f23691d\ValidationConfig.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=39
+     例tab@行2: '\t' 	"FileContentKeywordValidation":
+     例tab@行3: '\t' 	{
+     例tab@行4: '\t\t' 		"Keywords":
+     例tab@行5: '\t\t' 		[
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.render-pipelines.universal@3b809f23691d\Tests\.tests.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=1
+     例tab@行2: '\t' 	"createSeparatePackage": false
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.searcher@d45a78918735\README.md
+   缩进3格的行数=11, 4格行数=12, 含tab缩进的行数=0
+     例3格@行100:    SearcherWindow.Show( this, m_Searcher,
+     例3格@行107:    var searcherControl = new SearcherControl();
+     例3格@行108:    searcherControl.Setup( m_Searcher, item => Debug.Log( item.name ) );
+     例3格@行109:    this.GetRootVisualContainer().Add( searcherControl );
+     例3格@行117:    VisualElement MakeItem();
+     例3格@行118:    VisualElement Bind( VisualElement target, SearcherItem item,
+     例3格@行120:    string title { get; }
+     例3格@行121:    bool hasDetailsPanel { get; }
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.searcher@d45a78918735\Samples~\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=2
+     例tab@行2: '\t' 	"displayName" : "Searchers Samples",
+     例tab@行3: '\t' 	"description" : "Some Searcher's basic examples"
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.services.authentication@1cdc3224fb13\README.md
+   缩进3格的行数=4, 4格行数=93, 含tab缩进的行数=0
+     例3格@行72:    * This triggers the sign-in of the player with an Oculus account
+     例3格@行73:    * Game developer is responsible for installing the necessary SDK to get the u
+     例3格@行74:    * By default, this method will create an account if no account is currently l
+     例3格@行75:    * If this method is called while already signed in or currently signing in, t
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.services.core@8ba50f624741\ValidationExceptions.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=2
+     例tab@行2: '\t' 	"ErrorExceptions":  [],
+     例tab@行3: '\t' 	"WarningExceptions": []
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.services.core@8ba50f624741\Editor\Core\Configuration\productionUrls.json
+   缩进3格的行数=42, 4格行数=0, 含tab缩进的行数=0
+     例3格@行2:    "activation":"https://activation.unity3d.com",
+     例3格@行3:    "ads":"https://unityads.unity3d.com/admin",
+     例3格@行4:    "analytics":"https://analytics.cloud.unity3d.com",
+     例3格@行5:    "build":"https://developer.cloud.unity3d.com",
+     例3格@行6:    "build-api":"https://build-api.cloud.unity3d.com",
+     例3格@行7:    "cdp-analytics":"https://prd-lender.cdp.internal.unity3d.com",
+     例3格@行8:    "clouddata":"https://data.cloud.unity3d.com",
+     例3格@行9:    "collab":"https://collab.cloud.unity3d.com",
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\ValidationConfig.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=7
+     例tab@行2: '\t' 	"FileContentKeywordValidation":
+     例tab@行3: '\t' 	{
+     例tab@行4: '\t\t' 		"IgnoreFilenames":
+     例tab@行5: '\t\t' 		[
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Documentation~\Color-Modes.md
+   缩进3格的行数=3, 4格行数=0, 含tab缩进的行数=0
+     例3格@行110:    * In the **Categories** section, define the colors and the number of colors y
+     例3格@行111:    * In the **Subgraphs** and **Nodes** sections, assign each listed sub graph a
+     例3格@行112:    * In the **Subgraphs** section, you can add sub graphs of your project that a
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Documentation~\Create-Node-Menu.md
+   缩进3格的行数=7, 4格行数=0, 含tab缩进的行数=0
+     例3格@行14:    * Select the [Shader Graph window](Shader-Graph-Window.md)'s workspace and pr
+     例3格@行15:    * Right-click in the Shader Graph Window's workspace and select **Create Node
+     例3格@行19:    The **Create Node** menu lists all nodes that are available in Shader Graph, 
+     例3格@行42:    The **Create Node** menu displays every node port available according to the 
+     例3格@行51:    * Select the Master Stack's targeted context (**Vertex** or **Fragment**) and
+     例3格@行52:    * Right-click in the Master Stack's targeted context area and select **Create
+     例3格@行56:    The **Create Node** menu displays all available blocks for the master stack b
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Documentation~\Create-Shader-Graph.md
+   缩进3格的行数=5, 4格行数=0, 含tab缩进的行数=0
+     例3格@行12:    The [template browser](template-browser.md) lists all available templates acc
+     例3格@行16:    Unity creates a new shader graph asset in your project.
+     例3格@行29:    The types of shader graphs available depend on the render pipelines present i
+     例3格@行31:    Unity creates a new shader graph asset in your project.
+     例3格@行44:    Unity creates a new shader graph asset in your project.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Documentation~\Custom-Render-Texture-Example.md
+   缩进3格的行数=8, 4格行数=3, 含tab缩进的行数=0
+     例3格@行12:    - Right-click in the Project window.
+     例3格@行13:    - Select **Create** > **Shader Graph** > **Custom Render Texture** and name y
+     例3格@行55:    - Outputs the double-buffered texture from the previous update.
+     例3格@行56:    - It provides three outputs for different types of textures: 2D, 3D, and Cube
+     例3格@行59:    - Outputs the width, height, and volume depth of the current Custom Render Te
+     例3格@行60:    - Use this node to determine the size of the texture being worked with.
+     例3格@行63:    - Outputs the current slice for 2D Texture Arrays or the Cubemap face index b
+     例3格@行70:    - The Custom Render Texture update loop runs before any rendering operations.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Documentation~\First-Shader-Graph.md
+   缩进3格的行数=6, 4格行数=0, 含tab缩进的行数=0
+     例3格@行27:    The **Create Node** menu opens, with the list of all available nodes.
+     例3格@行95:    The Blackboard now displays a [property of Color type](Property-Types.md#colo
+     例3格@行100:    * Change the **Name** according to the name you want to identify the property
+     例3格@行101:    * Make sure to activate the **Show In Inspector** option.
+     例3格@行107:    This connection updates the appearance of the 3D object in the **Main Preview
+     例3格@行111:    The property you added in the graph now appears in the material's Inspector. 
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Documentation~\Shader-Graph-Sample-Custom-Lighting-Get-Started.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行33:    * Enable **Keep Lighting Variants**.
+     例3格@行34:    * Disable **Default Decal Blending** and **Default SSAO**.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Documentation~\Shader-Graph-Sample-Custom-Material-Property-Drawers.md
+   缩进3格的行数=8, 4格行数=0, 含tab缩进的行数=0
+     例3格@行49:    * The **Custom Attributes** include an entry named **Remap**, which modifies 
+     例3格@行50:    * The attribute includes no parameter values for the called function. For mor
+     例3格@行58:    * The C# file includes a set of custom functions named `RemapDrawer` to displ
+     例3格@行59:    * The function names include a `Drawer` suffix while in the shader graph the 
+     例3格@行69:    * The **Custom Attributes** include an entry named **Remap** (previously desc
+     例3格@行70:    * The two attributes include specific parameter values for the called functio
+     例3格@行76:    * The C# file includes a set of custom functions named `HelpBoxDecorator` to 
+     例3格@行77:    * The function names include a `Decorator` suffix while in the shader graph t
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Samples~\CustomLighting\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=4
+     例tab@行2: '\t' 	"displayName":"Custom Lighting",
+     例tab@行3: '\t' 	"interactiveImport": "false",
+     例tab@行4: '\t' 	"description":"This sample helps you customize the URP ligh
+     例tab@行5: '\t' 	"createSeparatePackage": true
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Samples~\CustomMaterialPropertyDrawers\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=4
+     例tab@行2: '\t' 	"displayName":"Custom Material Property Drawers",
+     例tab@行3: '\t' 	"interactiveImport": "false",
+     例tab@行4: '\t' 	"description":"This sample contains an example of a Custom 
+     例tab@行5: '\t' 	"createSeparatePackage": true
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Samples~\FeatureExamples\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=4
+     例tab@行2: '\t' 	"displayName":"Feature Examples",
+     例tab@行3: '\t' 	"interactiveImport": "false",
+     例tab@行4: '\t' 	"description":"This set of assets provides examples for how
+     例tab@行5: '\t' 	"createSeparatePackage": true
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Samples~\FeatureExamples\Scenes\FeatureExamplesDescriptions.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=285
+     例tab@行2: '\t' 	"introduction":
+     例tab@行3: '\t' 	"""The Shader Graph Feature Examples sample content is a co
+     例tab@行4: '\t' 	""",
+     例tab@行7: '\t' 	"samples": [
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Samples~\NodeReference\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=4
+     例tab@行2: '\t' 	"displayName":"Node Reference Assets",
+     例tab@行3: '\t' 	"interactiveImport": "false",
+     例tab@行4: '\t' 	"description":"This set of Shader Graph assets provides ref
+     例tab@行5: '\t' 	"createSeparatePackage": true
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Samples~\ProceduralPatterns\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=4
+     例tab@行2: '\t' 	"displayName":"Procedural Patterns Subgraph Examples",
+     例tab@行3: '\t' 	"interactiveImport": "false",
+     例tab@行4: '\t' 	"description":"This collection of subgraphs showcases vario
+     例tab@行5: '\t' 	"createSeparatePackage": true
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Samples~\ProductionReady\Scenes\ProductionReadySamplesDescriptions.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=277
+     例tab@行2: '\t' 	"introduction":
+     例tab@行3: '\t' 	"""The Shader Graph Production Ready Shaders sample is a co
+     例tab@行4: '\t' 	""",
+     例tab@行7: '\t' 	"samples": [
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Samples~\Terrain\Scenes\TerrainSamplesDescriptions.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=338
+     例tab@行2: '\t' 	"introduction":
+     例tab@行3: '\t' 	"""With the addition of Shader Graph support to the terrain
+     例tab@行5: '\t' 	The example terrain shaders consist of the following elemen
+     例tab@行7: '\t' 	<b>Texture packing scheme</b>
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Samples~\UGUIShaders\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=4
+     例tab@行2: '\t' 	"displayName":"UGUI Shaders",
+     例tab@行3: '\t' 	"interactiveImport": "false",
+     例tab@行4: '\t' 	"description":"This sample is all about creating 2D UI elem
+     例tab@行5: '\t' 	"createSeparatePackage": true
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.shadergraph@28ee1cc75774\Tests\.tests.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=1
+     例tab@行2: '\t' 	"createSeparatePackage": false
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.test-framework.performance@aa81a99c4a75\Documentation~\index.md
+   缩进3格的行数=1, 4格行数=16, 含tab缩进的行数=0
+     例3格@行27:    editor.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.test-framework@aebcb98460c6\CHANGELOG.md
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=3
+     例tab@行260: '\t' 	- Run Selected Tests in player
+     例tab@行261: '\t' 	- Build/Export project with all tests in player
+     例tab@行262: '\t' 	- Build/Export project with selected tests in player
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.test-framework@aebcb98460c6\Tests\.tests.json
+   缩进3格的行数=1, 4格行数=1, 含tab缩进的行数=0
+     例3格@行3:    "dependencies": {
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.timeline@8cd8509afae5\.claude\skills\changelog\SKILL.md
+   缩进3格的行数=14, 4格行数=0, 含tab缩进的行数=0
+     例3格@行14:    - Options: "I have a UUM/JIRA number" | "I have an issue ID" | "No issue numb
+     例3格@行17:    - **Added**: New features, new APIs
+     例3格@行18:    - **Changed**: Changed behavior, API changes, obsolete APIs
+     例3格@行19:    - **Fixed**: Bugfixes
+     例3格@行20:    - **Internal**: Changes only impacting internal tools/APIs
+     例3格@行25:    - ShortDescription: 2-4 words, CamelCase, descriptive
+     例3格@行26:    - Good: `UUM-1234567-RectangleSelectionFix.md`, Bad: `TimelineFix.md`
+     例3格@行29:    ```
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.timeline@8cd8509afae5\Documentation~\wf-anim-human.md
+   缩进3格的行数=23, 4格行数=0, 含tab缩进的行数=0
+     例3格@行26:    Dragging a source asset adds an Animation clip on the same track. The duratio
+     例3格@行30:    There are [three Edit modes](clip-overview.md) that affect the editing behavi
+     例3格@行32:    You can also select an Animation clip to modify its [Animation clip propertie
+     例3格@行34:    ![](images/tl-mix-mode-turnleft-clip.png)
+     例3格@行36:    _The Mix mode (red) is the selected Edit mode. The `TurnLeft` clip is positio
+     例3格@行40:    ![](images/tl-human-all-clips.png)
+     例3格@行42:    _Animation track with the `TurnLeft` and `Walk` Animation clips_
+     例3格@行46:    ![](images/spec-human-before-match.png)
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.timeline@8cd8509afae5\Documentation~\wf-custom-marker.md
+   缩进3格的行数=44, 4格行数=76, 含tab缩进的行数=0
+     例3格@行40:    This folder will store the scripts, assets, and images for overriding the def
+     例3格@行42:    This folder will store a custom script that overrides the default marker beha
+     例3格@行45:    The `Extensions` folder will store a Unity Style Sheet. This file must be in 
+     例3格@行46:    The `Resources` folder will store the image resource files used by the Unity 
+     例3格@行48:    ![](images/proj-notes-folders.png)
+     例3格@行50:    _Project window with the `Notes` folder and its paths expanded._
+     例3格@行59:    For Unity to recognize this script, the file name must match the class name.
+     例3格@行61:    The `NotesMarker` script opens for editing in your [External Script Editor](h
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.timeline@8cd8509afae5\Samples~\Customization\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=3
+     例tab@行2: '\t' 	"displayName": "Customization Samples",
+     例tab@行3: '\t' 	"description": "This sample demonstrates how to create cust
+     例tab@行4: '\t' 	"createSeparatePackage": false
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.timeline@8cd8509afae5\Samples~\GameplaySequenceDemo\.sample.json
+   缩进3格的行数=0, 4格行数=0, 含tab缩进的行数=3
+     例tab@行2: '\t' 	"displayName": "Gameplay Sequence Demo",
+     例tab@行3: '\t' 	"description": "This sample demonstrates how Timeline can b
+     例tab@行4: '\t' 	"createSeparatePackage": false
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.ugui@8ccc29d23a79\PackageConversionData.json
+   缩进3格的行数=0, 4格行数=2, 含tab缩进的行数=14
+     例tab@行508: '\t\t' 		{
+     例tab@行518: '\t\t' 		{
+     例tab@行528: '\t\t' 		{
+     例tab@行538: '\t\t' 		{
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.ugui@8ccc29d23a79\PackageConversionData_Assets.json
+   缩进3格的行数=0, 4格行数=2, 含tab缩进的行数=14
+     例tab@行8: '\t\t' 		{
+     例tab@行13: '\t\t' 		{
+     例tab@行38: '\t\t' 		{
+     例tab@行98: '\t\t' 		{
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-add-custom-event-node.md
+   缩进3格的行数=2, 4格行数=5, 含tab缩进的行数=0
+     例3格@行31:    - Enter a name in the field next to the **Name** input port. 
+     例3格@行32:    - Attach a node that outputs a string value to the **Name** input port. 
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-add-subgraph.md
+   缩进3格的行数=6, 4格行数=0, 含tab缩进的行数=0
+     例3格@行15:    - **Embed**: The Subgraph only exists on the Subgraph node. You can only modi
+     例3格@行16:    - **Graph**: The Subgraph exists in a separate file. You can modify the Subgr
+     例3格@行17:    <br/>
+     例3格@行19:    [!include[vs-graph-inspector-tip.md](./snippets/vs-graph-inspector-tip.md)]
+     例3格@行35:    <br/>
+     例3格@行37:    [!include[vs-graph-inspector-tip.md](./snippets/vs-graph-inspector-tip.md)]
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-capturing-player-inputs-new.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行27:    > [!TIP]
+     例3格@行28:    > If a context menu appears when you right-click, select **Add Node** to open
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-capturing-player-inputs-old.md
+   缩进3格的行数=3, 4格行数=6, 含tab缩进的行数=0
+     例3格@行11:    1. [!include[vs-open-fuzzy-finder](./snippets/vs-open-fuzzy-finder.md)]
+     例3格@行12:    1. Go to **Events** > **Lifecycle**, or enter **On Update** in the search fie
+     例3格@行13:    1. Select the **On Update** Event node to add it to the graph.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-create-custom-node-attributes-reference.md
+   缩进3格的行数=42, 4格行数=8, 含tab缩进的行数=0
+     例3格@行37:    }
+     例3格@行61:    }
+     例3格@行86:    }
+     例3格@行109:    }
+     例3格@行135:    }
+     例3格@行168:    [DoNotSerialize]
+     例3格@行169:    public ControlInput inputTrigger;
+     例3格@行171:    [DoNotSerialize]
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-create-custom-node-empty.md
+   缩进3格的行数=10, 4格行数=0, 含tab缩进的行数=0
+     例3格@行19:    ```C#
+     例3格@行20:    using Unity.VisualScripting;
+     例3格@行21:    using UnityEngine;
+     例3格@行23:    public class MyNode : Unit
+     例3格@行24:    {
+     例3格@行28:    }
+     例3格@行29:    ```
+     例3格@行37:    > [!NOTE]
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-create-own-custom-event-listen-code.md
+   缩进3格的行数=6, 4格行数=5, 含tab缩进的行数=0
+     例3格@行27:    using UnityEngine;
+     例3格@行28:    public class EventReceiver : MonoBehaviour
+     例3格@行29:    {
+     例3格@行37:    }
+     例3格@行59:    The `EventReceiver` script logs the following message to the console every ti
+     例3格@行61:    ![An image of the Console window. The Console contains a "RECEIVED 1" message
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-create-own-custom-event-node-trigger-code.md
+   缩进3格的行数=1, 4格行数=7, 含tab缩进的行数=0
+     例3格@行59:    ![An image of the Unity Editor's Inspector window with the Add Component menu
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-create-own-custom-event-node.md
+   缩进3格的行数=12, 4格行数=2, 含tab缩进的行数=0
+     例3格@行22:    using Unity.VisualScripting;
+     例3格@行23:    using UnityEngine;
+     例3格@行25:    //Register a string name for your Custom Scripting Event to hook it to an Eve
+     例3格@行26:    public static class EventNames
+     例3格@行27:    {
+     例3格@行29:    }
+     例3格@行31:    [UnitTitle("On my Custom Event")]//The Custom Scripting Event node to receive
+     例3格@行32:    [UnitCategory("Events\\MyEvents")]//Set the path to find the node in the fuzz
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-create-own-custom-event-send-node.md
+   缩进3格的行数=6, 4格行数=5, 含tab缩进的行数=0
+     例3格@行33:    [UnitTitle("Send My Custom Event")]
+     例3格@行34:    [UnitCategory("Events\\MyEvents")]//Setting the path to find the node in the 
+     例3格@行35:    public class SendMyEvent : Unit
+     例3格@行36:    {
+     例3格@行61:    }
+     例3格@行91:    ![An image of the Graph Editor. An On Keyboard Input node with its Key set to
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-debug-messages.md
+   缩进3格的行数=8, 4格行数=0, 含tab缩进的行数=0
+     例3格@行16:    - Use the starting events that are created with the script machine.
+     例3格@行17:    - Add an event node to the graph.
+     例3格@行19:    The fuzzy finder appears. 
+     例3格@行21:    A list of Debug nodes appears.
+     例3格@行23:    The select Debug node is placed in the graph and linked to the event.
+     例3格@行25:    The fuzzy finder appears.
+     例3格@行27:    A String node appears on the graph, connected to the Debug node.v
+     例3格@行28:    Enter the debug message in the string node**.**
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-editor-script-issues.md
+   缩进3格的行数=1, 4格行数=5, 含tab缩进的行数=0
+     例3格@行34:    A yellow warning flag is displayed next to any affected packages as shown in 
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\vs-nesting-add-triggers-data-graph.md
+   缩进3格的行数=8, 4格行数=16, 含tab缩进的行数=0
+     例3格@行17:    - **Trigger Inputs**
+     例3格@行18:    - **Trigger Outputs**
+     例3格@行19:    - **Data Inputs**
+     例3格@行20:    - **Data Outputs**
+     例3格@行31:    - Enable **Hide Label** to hide the port label on any Subgraph node, Input no
+     例3格@行32:    - Disable **Hide Label** to display the data from the **Label** field.
+     例3格@行34:    1. Select the **Type** list to open the Type menu.
+     例3格@行35:    1. Select a data type from the list to set the data type the port accepts.
+FILE: H:\AI Files\CoreAI\Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Documentation~\snippets\vs-graph-inspector-tip.md
+   缩进3格的行数=2, 4格行数=0, 含tab缩进的行数=0
+     例3格@行5:    > [!TIP]
+     例3格@行6:    > If the Graph Inspector isn't visible in the Graph window, select **Graph In
+FILE: H:\AI Files\CoreAI\TODO\MultiAgent_Orchestration_v2.0.md
+   缩进3格的行数=25, 4格行数=69, 含tab缩进的行数=0
+     例3格@行12:    ```typescript
+     例3格@行13:    agents: {
+     例3格@行20:    }
+     例3格@行21:    ```
+     例3格@行24:    - Task MUST be in the parent's allowedTools
+     例3格@行25:    - Task MUST NOT be in subagent tools - subagents do not spawn their own subag
+     例3格@行28:    - subagent sees ONLY its own task
+     例3格@行29:    - does not pollute the parent context
+FILE: H:\AI Files\Harness-Agent\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\Harness-Agent\需求文档\Memory需求文档.md
+   缩进3格的行数=4, 4格行数=0, 含tab缩进的行数=0
+     例3格@行38:    - 工具调用的地方，需要改成返回 `None` 和 `非None`。
+     例3格@行39:    - 在 `agent_loop` 循环中，如果 LLM 返回的消息中**没有使用工具**（即当前处理告一段落），则调用 `after_loop` 的 ho
+     例3格@行41:    - 在触发的 `after_loop` 中，执行记忆总结功能，整合用户习惯以及通用 SOP 保存在本地。
+     例3格@行42:    - 每次处理/保存完毕后，重新生成记忆索引文件。
+FILE: H:\AI Files\learn-claude-code\docs\en\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\en\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- preserve the directory for later.
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- remove directory, complete t
+FILE: H:\AI Files\learn-claude-code\docs\ja\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\ja\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- ディレクトリを保持する。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- ディレクトリを削除し、紐付けられたタスクを完了し、イベン
+FILE: H:\AI Files\learn-claude-code\docs\zh\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- 保留目录供后续使用。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- 删除目录, 完成绑定任务, 发出事件。一个调用搞定拆除 
+FILE: H:\AI Files\learn-claude-code\s12_cron_scheduler\README.md
+   缩进3格的行数=3, 4格行数=11, 含tab缩进的行数=0
+     例3格@行56:    *     *    *    *      *    every minute
+     例3格@行57:    0     9    *    *      *    every day at 09:00
+     例3格@行59:    0     9    *    *     1-5   weekdays at 09:00
+FILE: H:\AI Files\learn-claude-code\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css
+   缩进3格的行数=4, 4格行数=1, 含tab缩进的行数=0
+     例3格@行47:    PROSE-CUSTOM: Premium documentation rendering
+     例3格@行48:    ===================================================== */
+     例3格@行491:    HIGHLIGHT.JS TOKEN THEME (code syntax highlighting)
+     例3格@行492:    ===================================================== */
+FILE: H:\AI Files\LLMUnity\CONTRIBUTING.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行73:    often it happens
+FILE: H:\AI Files\LLMUnity\LICENSE.md
+   缩进3格的行数=21, 4格行数=0, 含tab缩进的行数=0
+     例3格@行5:    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+     例3格@行7:    1. Definitions.
+     例3格@行66:    2. Grant of Copyright License. Subject to the terms and conditions of
+     例3格@行73:    3. Grant of Patent License. Subject to the terms and conditions of
+     例3格@行89:    4. Redistribution. You may reproduce and distribute copies of the
+     例3格@行130:    5. Submission of Contributions. Unless You explicitly state otherwise,
+     例3格@行138:    6. Trademarks. This License does not grant permission to use the trade
+     例3格@行143:    7. Disclaimer of Warranty. Unless required by applicable law or
+FILE: H:\AI Files\LLMUnity\package.json
+   缩进3格的行数=6, 4格行数=32, 含tab缩进的行数=0
+     例3格@行26:    ],
+     例3格@行27:    "samples": [
+     例3格@行63:    ],
+     例3格@行64:    "dependencies": {
+     例3格@行66:    },
+     例3格@行67:    "author": {
+FILE: H:\AI Files\LLMUnity\.github\doxygen\header.html
+   缩进3格的行数=9, 4格行数=7, 含tab缩进的行数=0
+     例3格@行49:    <div id="projectname">$projectname
+     例3格@行50:    <!--BEGIN PROJECT_NUMBER-->&#160;<span id="projectnumber">$projectnumber</spa
+     例3格@行51:    </div>
+     例3格@行52:    <!--BEGIN PROJECT_BRIEF--><div id="projectbrief">$projectbrief</div><!--END P
+     例3格@行56:    <!--BEGIN PROJECT_BRIEF-->
+     例3格@行60:    <!--END PROJECT_BRIEF-->
+     例3格@行63:    <!--BEGIN SEARCHENGINE-->
+     例3格@行64:    <td>$searchbox</td>
+FILE: H:\AI Files\LLMUnity\Samples~\RAG\hamlet_project_gutenberg.txt
+   缩进3格的行数=105, 4格行数=11, 含tab缩进的行数=0
+     例3格@行2021:    Doubt truth to be a liar,
+     例3格@行2510:    ’One fair daughter, and no more,
+     例3格@行2511:    The which he loved passing well.’
+     例3格@行2531:    As by lot, God wot,
+     例3格@行2533:    It came to pass, as most like it was.
+     例3格@行2565:    _The rugged Pyrrhus, like th’ Hyrcanian beast,—_
+     例3格@行2567:    _The rugged Pyrrhus, he whose sable arms,
+     例3格@行2568:    Black as his purpose, did the night resemble

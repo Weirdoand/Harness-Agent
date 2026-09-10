@@ -1,0 +1,451 @@
+FILE: H:\AI Files\Harness-Agent\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\Harness-Agent\需求文档\Memory需求文档.md
+   缩进3格的行数=4, 4格行数=0, 含tab缩进的行数=0
+     例3格@行38:    - 工具调用的地方，需要改成返回 `None` 和 `非None`。
+     例3格@行39:    - 在 `agent_loop` 循环中，如果 LLM 返回的消息中**没有使用工具**（即当前处理告一段落），则调用 `after_loop` 的 ho
+     例3格@行41:    - 在触发的 `after_loop` 中，执行记忆总结功能，整合用户习惯以及通用 SOP 保存在本地。
+     例3格@行42:    - 每次处理/保存完毕后，重新生成记忆索引文件。
+FILE: H:\AI Files\learn-claude-code\docs\en\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\en\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- preserve the directory for later.
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- remove directory, complete t
+FILE: H:\AI Files\learn-claude-code\docs\ja\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\ja\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- ディレクトリを保持する。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- ディレクトリを削除し、紐付けられたタスクを完了し、イベン
+FILE: H:\AI Files\learn-claude-code\docs\zh\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- 保留目录供后续使用。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- 删除目录, 完成绑定任务, 发出事件。一个调用搞定拆除 
+------------------------------
+FILE: H:\AI Files\Harness-Agent\需求文档\Memory需求文档.md
+   缩进3格的行数=4, 4格行数=0, 含tab缩进的行数=0
+     例3格@行38:    - 工具调用的地方，需要改成返回 `None` 和 `非None`。
+     例3格@行39:    - 在 `agent_loop` 循环中，如果 LLM 返回的消息中**没有使用工具**（即当前处理告一段落），则调用 `after_loop` 的 ho
+     例3格@行41:    - 在触发的 `after_loop` 中，执行记忆总结功能，整合用户习惯以及通用 SOP 保存在本地。
+     例3格@行42:    - 每次处理/保存完毕后，重新生成记忆索引文件。
+FILE: H:\AI Files\learn-claude-code\docs\en\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\en\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- preserve the directory for later.
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- remove directory, complete t
+FILE: H:\AI Files\learn-claude-code\docs\ja\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\ja\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- ディレクトリを保持する。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- ディレクトリを削除し、紐付けられたタスクを完了し、イベン
+FILE: H:\AI Files\learn-claude-code\docs\zh\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- 保留目录供后续使用。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- 删除目录, 完成绑定任务, 发出事件。一个调用搞定拆除 
+FILE: H:\AI Files\learn-claude-code\s12_cron_scheduler\README.md
+   缩进3格的行数=3, 4格行数=11, 含tab缩进的行数=0
+     例3格@行56:    *     *    *    *      *    every minute
+     例3格@行57:    0     9    *    *      *    every day at 09:00
+------------------------------
+FILE: H:\AI Files\learn-claude-code\docs\en\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\en\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- preserve the directory for later.
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- remove directory, complete t
+FILE: H:\AI Files\learn-claude-code\docs\ja\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\ja\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- ディレクトリを保持する。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- ディレクトリを削除し、紐付けられたタスクを完了し、イベン
+FILE: H:\AI Files\learn-claude-code\docs\zh\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- 保留目录供后续使用。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- 删除目录, 完成绑定任务, 发出事件。一个调用搞定拆除 
+FILE: H:\AI Files\learn-claude-code\s12_cron_scheduler\README.md
+   缩进3格的行数=3, 4格行数=11, 含tab缩进的行数=0
+     例3格@行56:    *     *    *    *      *    every minute
+     例3格@行57:    0     9    *    *      *    every day at 09:00
+     例3格@行59:    0     9    *    *     1-5   weekdays at 09:00
+FILE: H:\AI Files\learn-claude-code\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css
+------------------------------
+FILE: H:\AI Files\learn-claude-code\docs\en\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- preserve the directory for later.
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- remove directory, complete t
+FILE: H:\AI Files\learn-claude-code\docs\ja\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\ja\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- ディレクトリを保持する。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- ディレクトリを削除し、紐付けられたタスクを完了し、イベン
+FILE: H:\AI Files\learn-claude-code\docs\zh\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- 保留目录供后续使用。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- 删除目录, 完成绑定任务, 发出事件。一个调用搞定拆除 
+FILE: H:\AI Files\learn-claude-code\s12_cron_scheduler\README.md
+   缩进3格的行数=3, 4格行数=11, 含tab缩进的行数=0
+     例3格@行56:    *     *    *    *      *    every minute
+     例3格@行57:    0     9    *    *      *    every day at 09:00
+     例3格@行59:    0     9    *    *     1-5   weekdays at 09:00
+FILE: H:\AI Files\learn-claude-code\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css
+   缩进3格的行数=4, 4格行数=1, 含tab缩进的行数=0
+     例3格@行47:    PROSE-CUSTOM: Premium documentation rendering
+     例3格@行48:    ===================================================== */
+     例3格@行491:    HIGHLIGHT.JS TOKEN THEME (code syntax highlighting)
+     例3格@行492:    ===================================================== */
+FILE: H:\AI Files\LLMUnity\CONTRIBUTING.md
+------------------------------
+FILE: H:\AI Files\learn-claude-code\docs\ja\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\ja\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- ディレクトリを保持する。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- ディレクトリを削除し、紐付けられたタスクを完了し、イベン
+FILE: H:\AI Files\learn-claude-code\docs\zh\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- 保留目录供后续使用。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- 删除目录, 完成绑定任务, 发出事件。一个调用搞定拆除 
+FILE: H:\AI Files\learn-claude-code\s12_cron_scheduler\README.md
+   缩进3格的行数=3, 4格行数=11, 含tab缩进的行数=0
+     例3格@行56:    *     *    *    *      *    every minute
+     例3格@行57:    0     9    *    *      *    every day at 09:00
+     例3格@行59:    0     9    *    *     1-5   weekdays at 09:00
+FILE: H:\AI Files\learn-claude-code\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css
+   缩进3格的行数=4, 4格行数=1, 含tab缩进的行数=0
+     例3格@行47:    PROSE-CUSTOM: Premium documentation rendering
+     例3格@行48:    ===================================================== */
+     例3格@行491:    HIGHLIGHT.JS TOKEN THEME (code syntax highlighting)
+     例3格@行492:    ===================================================== */
+FILE: H:\AI Files\LLMUnity\CONTRIBUTING.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行73:    often it happens
+FILE: H:\AI Files\LLMUnity\LICENSE.md
+   缩进3格的行数=21, 4格行数=0, 含tab缩进的行数=0
+------------------------------
+FILE: H:\AI Files\learn-claude-code\docs\ja\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- ディレクトリを保持する。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- ディレクトリを削除し、紐付けられたタスクを完了し、イベン
+FILE: H:\AI Files\learn-claude-code\docs\zh\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- 保留目录供后续使用。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- 删除目录, 完成绑定任务, 发出事件。一个调用搞定拆除 
+FILE: H:\AI Files\learn-claude-code\s12_cron_scheduler\README.md
+   缩进3格的行数=3, 4格行数=11, 含tab缩进的行数=0
+     例3格@行56:    *     *    *    *      *    every minute
+     例3格@行57:    0     9    *    *      *    every day at 09:00
+     例3格@行59:    0     9    *    *     1-5   weekdays at 09:00
+FILE: H:\AI Files\learn-claude-code\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css
+   缩进3格的行数=4, 4格行数=1, 含tab缩进的行数=0
+     例3格@行47:    PROSE-CUSTOM: Premium documentation rendering
+     例3格@行48:    ===================================================== */
+     例3格@行491:    HIGHLIGHT.JS TOKEN THEME (code syntax highlighting)
+     例3格@行492:    ===================================================== */
+FILE: H:\AI Files\LLMUnity\CONTRIBUTING.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行73:    often it happens
+FILE: H:\AI Files\LLMUnity\LICENSE.md
+   缩进3格的行数=21, 4格行数=0, 含tab缩进的行数=0
+     例3格@行5:    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+     例3格@行7:    1. Definitions.
+     例3格@行66:    2. Grant of Copyright License. Subject to the terms and conditions of
+     例3格@行73:    3. Grant of Patent License. Subject to the terms and conditions of
+     例3格@行89:    4. Redistribution. You may reproduce and distribute copies of the
+     例3格@行130:    5. Submission of Contributions. Unless You explicitly state otherwise,
+------------------------------
+FILE: H:\AI Files\learn-claude-code\docs\zh\s06-context-compact.md
+   缩进3格的行数=4, 4格行数=14, 含tab缩进的行数=0
+     例3格@行30:    |               |
+     例3格@行31:    no              yes
+     例3格@行32:    |               |
+     例3格@行33:    v               v
+FILE: H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- 保留目录供后续使用。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- 删除目录, 完成绑定任务, 发出事件。一个调用搞定拆除 
+FILE: H:\AI Files\learn-claude-code\s12_cron_scheduler\README.md
+   缩进3格的行数=3, 4格行数=11, 含tab缩进的行数=0
+     例3格@行56:    *     *    *    *      *    every minute
+     例3格@行57:    0     9    *    *      *    every day at 09:00
+     例3格@行59:    0     9    *    *     1-5   weekdays at 09:00
+FILE: H:\AI Files\learn-claude-code\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css
+   缩进3格的行数=4, 4格行数=1, 含tab缩进的行数=0
+     例3格@行47:    PROSE-CUSTOM: Premium documentation rendering
+     例3格@行48:    ===================================================== */
+     例3格@行491:    HIGHLIGHT.JS TOKEN THEME (code syntax highlighting)
+     例3格@行492:    ===================================================== */
+FILE: H:\AI Files\LLMUnity\CONTRIBUTING.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行73:    often it happens
+FILE: H:\AI Files\LLMUnity\LICENSE.md
+   缩进3格的行数=21, 4格行数=0, 含tab缩进的行数=0
+     例3格@行5:    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+     例3格@行7:    1. Definitions.
+     例3格@行66:    2. Grant of Copyright License. Subject to the terms and conditions of
+     例3格@行73:    3. Grant of Patent License. Subject to the terms and conditions of
+     例3格@行89:    4. Redistribution. You may reproduce and distribute copies of the
+     例3格@行130:    5. Submission of Contributions. Unless You explicitly state otherwise,
+     例3格@行138:    6. Trademarks. This License does not grant permission to use the trade
+     例3格@行143:    7. Disclaimer of Warranty. Unless required by applicable law or
+FILE: H:\AI Files\LLMUnity\package.json
+   缩进3格的行数=6, 4格行数=32, 含tab缩进的行数=0
+------------------------------
+FILE: H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md
+   缩进3格的行数=2, 4格行数=6, 含tab缩进的行数=0
+     例3格@行73:    - `worktree_keep(name)` -- 保留目录供后续使用。
+     例3格@行74:    - `worktree_remove(name, complete_task=True)` -- 删除目录, 完成绑定任务, 发出事件。一个调用搞定拆除 
+FILE: H:\AI Files\learn-claude-code\s12_cron_scheduler\README.md
+   缩进3格的行数=3, 4格行数=11, 含tab缩进的行数=0
+     例3格@行56:    *     *    *    *      *    every minute
+     例3格@行57:    0     9    *    *      *    every day at 09:00
+     例3格@行59:    0     9    *    *     1-5   weekdays at 09:00
+FILE: H:\AI Files\learn-claude-code\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css
+   缩进3格的行数=4, 4格行数=1, 含tab缩进的行数=0
+     例3格@行47:    PROSE-CUSTOM: Premium documentation rendering
+     例3格@行48:    ===================================================== */
+     例3格@行491:    HIGHLIGHT.JS TOKEN THEME (code syntax highlighting)
+     例3格@行492:    ===================================================== */
+FILE: H:\AI Files\LLMUnity\CONTRIBUTING.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行73:    often it happens
+FILE: H:\AI Files\LLMUnity\LICENSE.md
+   缩进3格的行数=21, 4格行数=0, 含tab缩进的行数=0
+     例3格@行5:    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+     例3格@行7:    1. Definitions.
+     例3格@行66:    2. Grant of Copyright License. Subject to the terms and conditions of
+     例3格@行73:    3. Grant of Patent License. Subject to the terms and conditions of
+     例3格@行89:    4. Redistribution. You may reproduce and distribute copies of the
+     例3格@行130:    5. Submission of Contributions. Unless You explicitly state otherwise,
+     例3格@行138:    6. Trademarks. This License does not grant permission to use the trade
+     例3格@行143:    7. Disclaimer of Warranty. Unless required by applicable law or
+FILE: H:\AI Files\LLMUnity\package.json
+   缩进3格的行数=6, 4格行数=32, 含tab缩进的行数=0
+     例3格@行26:    ],
+     例3格@行27:    "samples": [
+     例3格@行63:    ],
+     例3格@行64:    "dependencies": {
+     例3格@行66:    },
+     例3格@行67:    "author": {
+------------------------------
+FILE: H:\AI Files\learn-claude-code\s12_cron_scheduler\README.md
+   缩进3格的行数=3, 4格行数=11, 含tab缩进的行数=0
+     例3格@行56:    *     *    *    *      *    every minute
+     例3格@行57:    0     9    *    *      *    every day at 09:00
+     例3格@行59:    0     9    *    *     1-5   weekdays at 09:00
+FILE: H:\AI Files\learn-claude-code\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css
+   缩进3格的行数=4, 4格行数=1, 含tab缩进的行数=0
+     例3格@行47:    PROSE-CUSTOM: Premium documentation rendering
+     例3格@行48:    ===================================================== */
+     例3格@行491:    HIGHLIGHT.JS TOKEN THEME (code syntax highlighting)
+     例3格@行492:    ===================================================== */
+FILE: H:\AI Files\LLMUnity\CONTRIBUTING.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行73:    often it happens
+FILE: H:\AI Files\LLMUnity\LICENSE.md
+   缩进3格的行数=21, 4格行数=0, 含tab缩进的行数=0
+     例3格@行5:    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+     例3格@行7:    1. Definitions.
+     例3格@行66:    2. Grant of Copyright License. Subject to the terms and conditions of
+     例3格@行73:    3. Grant of Patent License. Subject to the terms and conditions of
+     例3格@行89:    4. Redistribution. You may reproduce and distribute copies of the
+     例3格@行130:    5. Submission of Contributions. Unless You explicitly state otherwise,
+     例3格@行138:    6. Trademarks. This License does not grant permission to use the trade
+     例3格@行143:    7. Disclaimer of Warranty. Unless required by applicable law or
+FILE: H:\AI Files\LLMUnity\package.json
+   缩进3格的行数=6, 4格行数=32, 含tab缩进的行数=0
+     例3格@行26:    ],
+     例3格@行27:    "samples": [
+     例3格@行63:    ],
+     例3格@行64:    "dependencies": {
+     例3格@行66:    },
+     例3格@行67:    "author": {
+FILE: H:\AI Files\LLMUnity\.github\doxygen\header.html
+   缩进3格的行数=9, 4格行数=7, 含tab缩进的行数=0
+     例3格@行49:    <div id="projectname">$projectname
+     例3格@行50:    <!--BEGIN PROJECT_NUMBER-->&#160;<span id="projectnumber">$projectnumber</spa
+------------------------------
+FILE: H:\AI Files\learn-claude-code\skills\code-review\SKILL.md
+   缩进3格的行数=2, 4格行数=1, 含tab缩进的行数=0
+     例3格@行75:    - Impact: [What could go wrong]
+     例3格@行76:    - Fix: [Suggested solution]
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css
+   缩进3格的行数=4, 4格行数=1, 含tab缩进的行数=0
+     例3格@行47:    PROSE-CUSTOM: Premium documentation rendering
+     例3格@行48:    ===================================================== */
+     例3格@行491:    HIGHLIGHT.JS TOKEN THEME (code syntax highlighting)
+     例3格@行492:    ===================================================== */
+FILE: H:\AI Files\LLMUnity\CONTRIBUTING.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行73:    often it happens
+FILE: H:\AI Files\LLMUnity\LICENSE.md
+   缩进3格的行数=21, 4格行数=0, 含tab缩进的行数=0
+     例3格@行5:    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+     例3格@行7:    1. Definitions.
+     例3格@行66:    2. Grant of Copyright License. Subject to the terms and conditions of
+     例3格@行73:    3. Grant of Patent License. Subject to the terms and conditions of
+     例3格@行89:    4. Redistribution. You may reproduce and distribute copies of the
+     例3格@行130:    5. Submission of Contributions. Unless You explicitly state otherwise,
+     例3格@行138:    6. Trademarks. This License does not grant permission to use the trade
+     例3格@行143:    7. Disclaimer of Warranty. Unless required by applicable law or
+FILE: H:\AI Files\LLMUnity\package.json
+   缩进3格的行数=6, 4格行数=32, 含tab缩进的行数=0
+     例3格@行26:    ],
+     例3格@行27:    "samples": [
+     例3格@行63:    ],
+     例3格@行64:    "dependencies": {
+     例3格@行66:    },
+     例3格@行67:    "author": {
+FILE: H:\AI Files\LLMUnity\.github\doxygen\header.html
+   缩进3格的行数=9, 4格行数=7, 含tab缩进的行数=0
+     例3格@行49:    <div id="projectname">$projectname
+     例3格@行50:    <!--BEGIN PROJECT_NUMBER-->&#160;<span id="projectnumber">$projectnumber</spa
+     例3格@行51:    </div>
+     例3格@行52:    <!--BEGIN PROJECT_BRIEF--><div id="projectbrief">$projectbrief</div><!--END P
+     例3格@行56:    <!--BEGIN PROJECT_BRIEF-->
+     例3格@行60:    <!--END PROJECT_BRIEF-->
+     例3格@行63:    <!--BEGIN SEARCHENGINE-->
+------------------------------
+FILE: H:\AI Files\learn-claude-code\web\src\app\globals.css
+   缩进3格的行数=4, 4格行数=1, 含tab缩进的行数=0
+     例3格@行47:    PROSE-CUSTOM: Premium documentation rendering
+     例3格@行48:    ===================================================== */
+     例3格@行491:    HIGHLIGHT.JS TOKEN THEME (code syntax highlighting)
+     例3格@行492:    ===================================================== */
+FILE: H:\AI Files\LLMUnity\CONTRIBUTING.md
+   缩进3格的行数=1, 4格行数=0, 含tab缩进的行数=0
+     例3格@行73:    often it happens
+FILE: H:\AI Files\LLMUnity\LICENSE.md
+   缩进3格的行数=21, 4格行数=0, 含tab缩进的行数=0
+     例3格@行5:    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+     例3格@行7:    1. Definitions.
+     例3格@行66:    2. Grant of Copyright License. Subject to the terms and conditions of
+     例3格@行73:    3. Grant of Patent License. Subject to the terms and conditions of
+     例3格@行89:    4. Redistribution. You may reproduce and distribute copies of the
+     例3格@行130:    5. Submission of Contributions. Unless You explicitly state otherwise,
+     例3格@行138:    6. Trademarks. This License does not grant permission to use the trade
+     例3格@行143:    7. Disclaimer of Warranty. Unless required by applicable law or
+FILE: H:\AI Files\LLMUnity\package.json
+   缩进3格的行数=6, 4格行数=32, 含tab缩进的行数=0
+     例3格@行26:    ],
+     例3格@行27:    "samples": [
+     例3格@行63:    ],
+     例3格@行64:    "dependencies": {
+     例3格@行66:    },
+     例3格@行67:    "author": {
+FILE: H:\AI Files\LLMUnity\.github\doxygen\header.html
+   缩进3格的行数=9, 4格行数=7, 含tab缩进的行数=0
+     例3格@行49:    <div id="projectname">$projectname
+     例3格@行50:    <!--BEGIN PROJECT_NUMBER-->&#160;<span id="projectnumber">$projectnumber</spa
+     例3格@行51:    </div>
+     例3格@行52:    <!--BEGIN PROJECT_BRIEF--><div id="projectbrief">$projectbrief</div><!--END P
+     例3格@行56:    <!--BEGIN PROJECT_BRIEF-->
+     例3格@行60:    <!--END PROJECT_BRIEF-->
+     例3格@行63:    <!--BEGIN SEARCHENGINE-->
+     例3格@行64:    <td>$searchbox</td>
+FILE: H:\AI Files\LLMUnity\Samples~\RAG\hamlet_project_gutenberg.txt
+   缩进3格的行数=105, 4格行数=11, 含tab缩进的行数=0
+     例3格@行2021:    Doubt truth to be a liar,
+------------------------------

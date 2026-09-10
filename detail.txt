@@ -1,0 +1,58 @@
+#### code-review SKILL.md 行60~82 : H:\AI Files\Harness-Agent\skills\code-review\SKILL.md
+'- [ ] **Coverage**: Critical paths tested'
+'- [ ] **Edge cases**: Null, empty, boundary values'
+'- [ ] **Mocking**: External dependencies isolated'
+'- [ ] **Assertions**: Meaningful, specific checks'
+''
+'## Review Output Format'
+''
+'```markdown'
+'## Code Review: [file/component name]'
+''
+'### Summary'
+'[1-2 sentence overview]'
+''
+'### Critical Issues'
+'1. **[Issue]** (line X): [Description]'
+'   - Impact: [What could go wrong]'
+'   - Fix: [Suggested solution]'
+''
+'### Improvements'
+'1. **[Suggestion]** (line X): [Description]'
+''
+'### Positive Notes'
+'- [What was done well]'
+#### Memory需求文档.md 行30~45 : H:\AI Files\Harness-Agent\需求文档\Memory需求文档.md
+'单独生成一个 `build_system_prompt` 的函数，用于拼装最终的系统级 Prompt，其内部会组成以下结构：'
+'1. `SYSTEM_PROMPT` (基础设定)'
+'2. `MEMORY_PROMPT` (指导模型如何对待记忆)'
+'3. **记忆库的索引信息**'
+'4. **上一步找到的前几名记忆列表的记忆内容**'
+''
+'### 3.3 会话/任务结束 (记忆总结与更新)'
+'1. **执行流程改造 (需要更改的点)**: '
+'   - 工具调用的地方，需要改成返回 `None` 和 `非None`。'
+'   - 在 `agent_loop` 循环中，如果 LLM 返回的消息中**没有使用工具**（即当前处理告一段落），则调用 `after_loop` 的 hook，而不是在循环外面再调用。'
+'2. **总结与存储**:'
+'   - 在触发的 `after_loop` 中，执行记忆总结功能，整合用户习惯以及通用 SOP 保存在本地。'
+'   - 每次处理/保存完毕后，重新生成记忆索引文件。'
+''
+'## 4. Prompt 设计'
+''
+'### 4.1 MEMORY_PROMPT'
+#### Harness-Agent 目录下 .py 文件的缩进分布
+H:\AI Files\Harness-Agent\hello.py -> 缩进宽度分布{0: 4, 4: 8, 8: 2}, tab行数=0
+H:\AI Files\Harness-Agent\llm_chat.py -> 缩进宽度分布{0: 86, 4: 244, 8: 264, 12: 225, 16: 105, 20: 31, 24: 11, 28: 8, 32: 4, 36: 5}, tab行数=0
+H:\AI Files\Harness-Agent\test.py -> 缩进宽度分布{0: 1}, tab行数=0
+H:\AI Files\Harness-Agent\example\conftest.py -> 缩进宽度分布{0: 5, 4: 1}, tab行数=0
+H:\AI Files\Harness-Agent\example\demo_pkg\utils.py -> 缩进宽度分布{0: 5, 4: 6}, tab行数=0
+H:\AI Files\Harness-Agent\example\demo_pkg\__init__.py -> 缩进宽度分布{0: 4}, tab行数=0
+H:\AI Files\Harness-Agent\example\demo_pkg\tests\test_utils.py -> 缩进宽度分布{0: 6, 4: 12, 8: 10}, tab行数=0
+H:\AI Files\Harness-Agent\workspace\broad_scan.py -> 缩进宽度分布{0: 11, 4: 4, 8: 2, 12: 12, 16: 14, 20: 5}, tab行数=0
+H:\AI Files\Harness-Agent\workspace\debug_md.py -> 缩进宽度分布{0: 4, 4: 3, 8: 8, 12: 3}, tab行数=0
+H:\AI Files\Harness-Agent\workspace\detail_check.py -> 缩进宽度分布{0: 15, 4: 12, 8: 9, 12: 6}, tab行数=0
+H:\AI Files\Harness-Agent\workspace\extract_sel.py -> 缩进宽度分布{0: 8, 11: 1, 4: 1, 8: 3, 12: 1}, tab行数=0
+H:\AI Files\Harness-Agent\workspace\full_indent_scan.py -> 缩进宽度分布{0: 13, 8: 18, 4: 13, 12: 16, 16: 7}, tab行数=0
+H:\AI Files\Harness-Agent\workspace\indent_probe.py -> 缩进宽度分布{0: 7, 4: 27, 8: 15, 12: 10}, tab行数=0
+H:\AI Files\Harness-Agent\workspace\indent_scan.py -> 缩进宽度分布{0: 5, 4: 2, 8: 1, 12: 7, 16: 12, 20: 5, 24: 1}, tab行数=0
+H:\AI Files\Harness-Agent\workspace\recent_files.py -> 缩进宽度分布{0: 10, 4: 2, 8: 2, 12: 5, 16: 4}, tab行数=0

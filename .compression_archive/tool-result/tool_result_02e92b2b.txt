@@ -1,0 +1,75 @@
+ok
+#### s12 zh (H:\AI Files\learn-claude-code\docs\zh\s12-worktree-task-isolation.md) 琛�56~81
+  55 | ''  | 
+  56 | ''  | ```python
+  57 | ''  | def bind_worktree(self, task_id, worktree):
+  58 | '    ' |     task = self._load(task_id)
+  59 | '    ' |     task["worktree"] = worktree
+  60 | '    ' |     if task["status"] == "pending":
+  61 | '        ' |         task["status"] = "in_progress"
+  62 | '    ' |     self._save(task)
+  63 | ''  | ```
+  64 | ''  | 
+  65 | ''  | 3. **鍦� worktree 涓�鎵ц�屽懡浠ゃ��** `cwd` 鎸囧悜闅旂�荤洰褰曘��
+  66 | ''  | 
+  67 | ''  | ```python
+  68 | ''  | subprocess.run(command, shell=True, cwd=worktree_path,
+  69 | '               ' |                capture_output=True, text=True, timeout=300)
+  70 | ''  | ```
+  71 | ''  | 
+  72 | ''  | 4. **鏀跺熬銆�** 涓ょ�嶉�夋嫨:
+  73 | '   ' |    - `worktree_keep(name)` -- 淇濈暀鐩�褰曚緵鍚庣画浣跨敤銆�
+  74 | '   ' |    - `worktree_remove(name, complete_task=True)` -- 鍒犻櫎鐩�褰�, 瀹屾垚缁戝畾浠诲姟, 鍙戝嚭浜嬩欢銆備竴涓�璋冪敤鎼炲畾鎷嗛櫎 + 瀹屾垚銆�
+  75 | ''  | 
+  76 | ''  | ```python
+  77 | ''  | def remove(self, name, force=False, complete_task=False):
+  78 | '    ' |     self._run_git(["worktree", "remove", wt["path"]])
+  79 | '    ' |     if complete_task and wt.get("task_id") is not None:
+  80 | '        ' |         self.tasks.update(wt["task_id"], status="completed")
+#### s06 zh (H:\AI Files\learn-claude-code\docs\zh\s06-context-compact.md) 琛�19~41
+  18 | ''  | Every turn:
+  19 | ''  | +------------------+
+  20 | ''  | | Tool call result |
+  21 | ''  | +------------------+
+  22 | '        ' |         |
+  23 | '        ' |         v
+  24 | ''  | [Layer 1: micro_compact]        (silent, every turn)
+  25 | '  ' |   Replace tool_result > 3 turns old
+  26 | '  ' |   with "[Previous: used {tool_name}]"
+  27 | '        ' |         |
+  28 | '        ' |         v
+  29 | ''  | [Check: tokens > 50000?]
+  30 | '   ' |    |               |
+  31 | '   ' |    no              yes
+  32 | '   ' |    |               |
+  33 | '   ' |    v               v
+  34 | ''  | continue    [Layer 2: auto_compact]
+  35 | '              ' |               Save transcript to .transcripts/
+  36 | '              ' |               LLM summarizes conversation.
+  37 | '              ' |               Replace all messages with [summary].
+  38 | '                    ' |                     |
+  39 | '                    ' |                     v
+  40 | '            ' |             [Layer 3: compact tool]
+#### globals.css 娉ㄩ噴妯�骞� (H:\AI Files\learn-claude-code\web\src\app\globals.css) 琛�41~51
+  40 | ''  | }
+  41 | ''  | 
+  42 | ''  | * {
+  43 | '  ' |   -webkit-tap-highlight-color: transparent;
+  44 | ''  | }
+  45 | ''  | 
+  46 | ''  | /* =====================================================
+  47 | '   ' |    PROSE-CUSTOM: Premium documentation rendering
+  48 | '   ' |    ===================================================== */
+  49 | ''  | 
+  50 | ''  | /* -- Headings -- */
+#### LLMUnity LICENSE(绗�涓夋柟,瀵圭収) (H:\AI Files\LLMUnity\LICENSE.md) 琛�4~11
+   3 | '                        ' |                         http://www.apache.org/licenses/
+   4 | ''  | 
+   5 | '   ' |    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+   6 | ''  | 
+   7 | '   ' |    1. Definitions.
+   8 | ''  | 
+   9 | '      ' |       "License" shall mean the terms and conditions for use, reproduction,
+  10 | '      ' |       and distribution as defined by Sections 1 through 9 of this document.
+
+【系统提示】你已连续 3 次及以上未更新任务阶段步骤，请调用 todo_write 工具更新当前分解的子任务状态与进展。

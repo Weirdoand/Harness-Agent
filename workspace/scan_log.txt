@@ -1,0 +1,3 @@
+H:\AI Files\Harness-Agent\workspace\full_indent_scan.py:2: SyntaxWarning: invalid escape sequence '\A'
+  """全盘(本机H:\AI Files)扫描:哪些文本文件的真实缩进是3格/4格/tab, 记录证据到 out_indent_scan.txt"""
+written 1344

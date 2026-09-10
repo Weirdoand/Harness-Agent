@@ -1,0 +1,87 @@
+ 驱动器 H 中的卷是 Weirdoand
+ 卷的序列号是 A612-98F9
+
+ H:\AI Files\Harness-Agent 的目录
+
+2026/09/10  01:49    <DIR>          .
+2026/09/06  15:50    <DIR>          ..
+2026/09/06  20:32    <DIR>          -p
+2026/09/10  01:49    <DIR>          .compression_archive
+2026/09/05  23:09               114 .env
+2026/09/06  21:51             2,910 .gitignore
+2026/09/10  02:10    <DIR>          .memory
+2026/09/06  18:21    <DIR>          .pytest_cache
+2026/09/06  18:25    <DIR>          example
+2026/09/06  18:02               483 hello.py
+2026/09/10  02:08            55,151 llm_chat.py
+2026/09/06  21:24    <DIR>          skills
+2026/09/05  23:59                16 test.py
+2026/09/06  01:34                 0 test.txt
+2026/09/09  02:28    <DIR>          __pycache__
+2026/09/10  01:20    <DIR>          需求文档
+               6 个文件         58,674 字节
+              10 个目录 924,152,696,832 可用字节
+"---" 
+H:\AI Files\Harness-Agent\-p
+H:\AI Files\Harness-Agent\.compression_archive
+H:\AI Files\Harness-Agent\.env
+H:\AI Files\Harness-Agent\.memory
+H:\AI Files\Harness-Agent\.pytest_cache
+H:\AI Files\Harness-Agent\example
+H:\AI Files\Harness-Agent\hello.py
+H:\AI Files\Harness-Agent\llm_chat.py
+H:\AI Files\Harness-Agent\skills
+H:\AI Files\Harness-Agent\test.py
+H:\AI Files\Harness-Agent\test.txt
+H:\AI Files\Harness-Agent\__pycache__
+H:\AI Files\Harness-Agent\需求文档
+H:\AI Files\Harness-Agent\.memory\MEMORY_INDEX.md
+H:\AI Files\Harness-Agent\.memory\代码缩进偏好.md
+H:\AI Files\Harness-Agent\.pytest_cache\CACHEDIR.TAG
+H:\AI Files\Harness-Agent\.pytest_cache\README.md
+H:\AI Files\Harness-Agent\.pytest_cache\v
+H:\AI Files\Harness-Agent\.pytest_cache\v\cache
+H:\AI Files\Harness-Agent\.pytest_cache\v\cache\lastfailed
+H:\AI Files\Harness-Agent\.pytest_cache\v\cache\nodeids
+H:\AI Files\Harness-Agent\example\.pytest_cache
+H:\AI Files\Harness-Agent\example\conftest.py
+H:\AI Files\Harness-Agent\example\demo_pkg
+H:\AI Files\Harness-Agent\example\__pycache__
+H:\AI Files\Harness-Agent\example\.pytest_cache\CACHEDIR.TAG
+H:\AI Files\Harness-Agent\example\.pytest_cache\README.md
+H:\AI Files\Harness-Agent\example\.pytest_cache\v
+H:\AI Files\Harness-Agent\example\.pytest_cache\v\cache
+H:\AI Files\Harness-Agent\example\.pytest_cache\v\cache\nodeids
+H:\AI Files\Harness-Agent\example\demo_pkg\tests
+H:\AI Files\Harness-Agent\example\demo_pkg\utils.py
+H:\AI Files\Harness-Agent\example\demo_pkg\__init__.py
+H:\AI Files\Harness-Agent\example\demo_pkg\__pycache__
+H:\AI Files\Harness-Agent\example\demo_pkg\tests\test_utils.py
+H:\AI Files\Harness-Agent\example\demo_pkg\tests\__pycache__
+H:\AI Files\Harness-Agent\example\demo_pkg\tests\__pycache__\test_utils.cpython-312-pytest-9.1.1.pyc
+H:\AI Files\Harness-Agent\example\demo_pkg\__pycache__\utils.cpython-312.pyc
+H:\AI Files\Harness-Agent\example\demo_pkg\__pycache__\__init__.cpython-312.pyc
+H:\AI Files\Harness-Agent\example\__pycache__\conftest.cpython-312-pytest-9.1.1.pyc
+H:\AI Files\Harness-Agent\skills\agent-builder
+H:\AI Files\Harness-Agent\skills\code-review
+H:\AI Files\Harness-Agent\skills\mcp-builder
+H:\AI Files\Harness-Agent\skills\pdf
+H:\AI Files\Harness-Agent\skills\agent-builder\references
+H:\AI Files\Harness-Agent\skills\agent-builder\scripts
+H:\AI Files\Harness-Agent\skills\agent-builder\SKILL.md
+H:\AI Files\Harness-Agent\skills\agent-builder\references\agent-philosophy.md
+H:\AI Files\Harness-Agent\skills\agent-builder\references\minimal-agent.py
+H:\AI Files\Harness-Agent\skills\agent-builder\references\subagent-pattern.py
+H:\AI Files\Harness-Agent\skills\agent-builder\references\tool-templates.py
+H:\AI Files\Harness-Agent\skills\agent-builder\scripts\init_agent.py
+H:\AI Files\Harness-Agent\skills\code-review\SKILL.md
+H:\AI Files\Harness-Agent\skills\mcp-builder\SKILL.md
+H:\AI Files\Harness-Agent\skills\pdf\SKILL.md
+H:\AI Files\Harness-Agent\__pycache__\hello.cpython-312.pyc
+H:\AI Files\Harness-Agent\__pycache__\llm_chat.cpython-312.pyc
+H:\AI Files\Harness-Agent\__pycache__\test_todo_and_hooks.cpython-312-pytest-9.1.1.pyc
+H:\AI Files\Harness-Agent\__pycache__\test_todo_and_hooks.cpython-312.pyc
+H:\AI Files\Harness-Agent\__pycache__\_qs08.cpython-312.pyc
+H:\AI Files\Harness-Agent\需求文档\Memory需求文档.md
+H:\AI Files\Harness-Agent\需求文档\上下文需求文档.md
+

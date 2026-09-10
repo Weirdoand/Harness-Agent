@@ -1,0 +1,5 @@
+- [Tab Indentation Preference](Tab Indentation Preference.md) - User prefers tabs for indentation in code.
+- [不喜欢 static](不喜欢 static.md) - 用户表示不喜欢 static，但具体指代和范围尚未明确。
+- [对 static 的偏好](对 static 的偏好.md) - 用户不喜欢 'static'，但具体含义和适用范围待确认。
+- [缩进偏好](缩进偏好.md) - 用户偏好使用制表符（tabs）进行缩进，新代码用制表符，已有文件沿用原有风格。
+- [缩进风格偏好](缩进风格偏好.md) - 用户偏好使用制表符进行缩进，新代码用制表符，已有文件保持原风格。

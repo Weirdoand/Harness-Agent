@@ -1,0 +1,38 @@
+#### globals.css H:\AI Files\learn-claude-code\web\src\app\globals.css 行45~51
+  44 | len(前导)=0 '' | }
+  45 | len(前导)=0 '' | 
+  46 | len(前导)=0 '' | /* =====================================================
+  47 | len(前导)=3 '   ' |    PROSE-CUSTOM: Premium documentation rendering
+  48 | len(前导)=3 '   ' |    ===================================================== */
+  49 | len(前导)=0 '' | 
+  50 | len(前导)=0 '' | /* -- Headings -- */
+#### globals.css H:\AI Files\learn-claude-code\web\src\app\globals.css 行488~495
+ 487 | len(前导)=2 '  ' |   color: #a1a1aa;
+ 488 | len(前导)=0 '' | }
+ 489 | len(前导)=0 '' | 
+ 490 | len(前导)=0 '' | /* =====================================================
+ 491 | len(前导)=3 '   ' |    HIGHLIGHT.JS TOKEN THEME (code syntax highlighting)
+ 492 | len(前导)=3 '   ' |    ===================================================== */
+ 493 | len(前导)=0 '' | 
+ 494 | len(前导)=0 '' | .hljs {
+#### LLMUnity LICENSE H:\AI Files\LLMUnity\LICENSE.md 行5~10
+   4 | len(前导)=0 '' | 
+   5 | len(前导)=3 '   ' |    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+   6 | len(前导)=0 '' | 
+   7 | len(前导)=3 '   ' |    1. Definitions.
+   8 | len(前导)=0 '' | 
+   9 | len(前导)=6 '      ' |       "License" shall mean the terms and conditions for use, reproduction,
+#### SKILL.md H:\AI Files\Harness-Agent\skills\code-review\SKILL.md 行69~81
+  68 | len(前导)=0 '' | ## Code Review: [file/component name]
+  69 | len(前导)=0 '' | 
+  70 | len(前导)=0 '' | ### Summary
+  71 | len(前导)=0 '' | [1-2 sentence overview]
+  72 | len(前导)=0 '' | 
+  73 | len(前导)=0 '' | ### Critical Issues
+  74 | len(前导)=0 '' | 1. **[Issue]** (line X): [Description]
+  75 | len(前导)=3 '   ' |    - Impact: [What could go wrong]
+  76 | len(前导)=3 '   ' |    - Fix: [Suggested solution]
+  77 | len(前导)=0 '' | 
+  78 | len(前导)=0 '' | ### Improvements
+  79 | len(前导)=0 '' | 1. **[Suggestion]** (line X): [Description]
+  80 | len(前导)=0 '' | 
