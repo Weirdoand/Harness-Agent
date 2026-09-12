@@ -715,161 +715,126 @@ def todo_write(todos: list = None, **kwargs) -> str:
 # 定义供 LLM 调用的基础工具 Schema
 BASE_TOOLS = [
     {
-        "type": "function",
-        "function": {
-            "name": "run_bash",
-            "description": "执行本地系统 cmd 或 bash 命令并获取终端输出结果。例如用来查看文件、运行脚本等。",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "command": {
-                        "type": "string",
-                        "description": "需要执行的终端命令"
-                    }
-                },
-                "required": ["command"]
-            }
+        "name": "run_bash",
+        "description": "执行本地系统 cmd 或 bash 命令并获取终端输出结果。例如用来查看文件、运行脚本等。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string"
+                }
+            },
+            "required": ["command"]
         }
     },
     {
-        "type": "function",
-        "function": {
-            "name": "write_file",
-            "description": "用于创建新文件，或将已有文件完全重写（全量覆盖）。注意：这会替换掉目标文件的所有原有内容！",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "file_path": {"type": "string", "description": "文件路径"},
-                    "content": {"type": "string", "description": "要写入的完整新内容"}
-                },
-                "required": ["file_path", "content"]
-            }
+        "name": "write_file",
+        "description": "用于创建新文件，或将已有文件完全重写（全量覆盖）。注意：这会替换掉目标文件的所有原有内容！",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {"type": "string"},
+                "content": {"type": "string"}
+            },
+            "required": ["file_path", "content"]
         }
     },
     {
-        "type": "function",
-        "function": {
-            "name": "read_file",
-            "description": "用于读取文件内容",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "file_path": {"type": "string", "description": "要读取的文件路径"}
-                },
-                "required": ["file_path"]
-            }
+        "name": "read_file",
+        "description": "用于读取文件内容",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {"type": "string"}
+            },
+            "required": ["file_path"]
         }
     },
     {
-        "type": "function",
-        "function": {
-            "name": "edit_file",
-            "description": "用于对已有文件进行局部修改（打补丁）。通过精准匹配旧文本并替换为新文本来实现修改。",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "file_path": {"type": "string", "description": "文件路径"},
-                    "old_text": {"type": "string", "description": "文件中需要被替换的旧文本内容（必须完全一致）"},
-                    "new_text": {"type": "string", "description": "替换成的新文本内容"}
-                },
-                "required": ["file_path", "old_text", "new_text"]
-            }
+        "name": "edit_file",
+        "description": "用于对已有文件进行局部修改（打补丁）。通过精准匹配旧文本并替换为新文本来实现修改。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_path": {"type": "string"},
+                "old_text": {"type": "string"},
+                "new_text": {"type": "string"}
+            },
+            "required": ["file_path", "old_text", "new_text"]
         }
     },
     {
-        "type": "function",
-        "function": {
-            "name": "glob_bash",
-            "description": "用于查找文件，支持匹配模式表达式（例如 **/*.py）",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "pattern": {"type": "string", "description": "glob查找模式，如 src/**/*.py"}
-                },
-                "required": ["pattern"]
-            }
+        "name": "glob_bash",
+        "description": "用于查找文件，支持匹配模式表达式（例如 **/*.py）",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "pattern": {"type": "string"}
+            },
+            "required": ["pattern"]
         }
     },
     {
-        "type": "function",
-        "function": {
-            "name": "todo_write",
-            "description": "更新任务阶段列表与各步骤的执行状态。用于将复杂任务划分为各个小阶段并跟踪进度。",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "todos": {
-                        "type": "array",
-                        "description": "阶段步骤列表，每个步骤包含任务描述(task)和状态(status: pending, in_progress, completed)",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "task": {
-                                    "type": "string",
-                                    "description": "阶段步骤的任务描述"
-                                },
-                                "status": {
-                                    "type": "string",
-                                    "enum": ["pending", "in_progress", "completed"],
-                                    "description": "当前步骤状态：pending(待处理)、in_progress(进行中)、completed(已完成)"
-                                }
+        "name": "todo_write",
+        "description": "更新任务阶段列表与各步骤的执行状态。用于将复杂任务划分为各个小阶段并跟踪进度。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "todos": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "task": {
+                                "type": "string"
                             },
-                            "required": ["task", "status"]
-                        }
+                            "status": {
+                                "type": "string",
+                                "enum": ["pending", "in_progress", "completed"]
+                            }
+                        },
+                        "required": ["task", "status"]
                     }
-                },
-                "required": ["todos"]
-            }
+                }
+            },
+            "required": ["todos"]
         }
     },
     {
-        "type": "function",
-        "function": {
-            "name": "compact",
-            "description": "显式触发上下文压缩。当你认为当前的对话已经非常长，或者完成了一个重要阶段，可以调用此工具来总结历史对话，释放上下文空间。",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "load_skill",
-            "description": "加载指定技能的 SKILL.md 内容，获取技能的详细指南和约束。",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "skill_name": {"type": "string", "description": "技能名称"}
-                },
-                "required": ["skill_name"]
-            }
+        "name": "load_skill",
+        "description": "加载指定技能的 SKILL.md 内容，获取技能的详细指南和约束。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "skill_name": {"type": "string"}
+            },
+            "required": ["skill_name"]
         }
     }
 ]
 
+compact_schema = {
+    "name": "compact",
+    "description": "显式触发上下文压缩。当你认为当前的对话已经非常长，或者完成了一个重要阶段，可以调用此工具来总结历史对话，释放上下文空间。"
+}
+
 task_schema = {
-    "type": "function",
-    "function": {
-        "name": "task",
-        "description": "派发子任务给 subagent 执行。适用于独立或复杂的子需求。",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "instruction": {"type": "string", "description": "派发给子代理的具体需求指令"}
-            },
-            "required": ["instruction"]
-        }
+    "name": "task",
+    "description": "派发子任务给 subagent 执行。适用于独立或复杂的子需求。",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "instruction": {"type": "string"}
+        },
+        "required": ["instruction"]
     }
 }
 
 # 专门给 subagent 使用的工具集合
 SUB_TOOLS = list(BASE_TOOLS)
 
-# 供父级 Agent 调用的完整工具集合（包含派发子代理的 task 工具）
-TOOLS = BASE_TOOLS + [task_schema]
+# 供父级 Agent 调用的完整工具集合（包含派发子代理的 task 工具和 compact 工具）
+TOOLS = BASE_TOOLS + [task_schema, compact_schema]
 
 
 def compact(**kwargs) -> str:
@@ -881,7 +846,7 @@ def task(instruction: str, **kwargs) -> str:
     # run_subagent 将在稍后定义，此处做个占位或直接调用
     return run_subagent(instruction)
 
-# 基础的函数映射（供 subagent 使用，无 task 工具）
+# 基础的函数映射（供 subagent 使用，无 task 工具和 compact 工具）
 BASE_FUNCTIONS = {
     "run_bash": run_bash,
     "write_file": write_file,
@@ -889,16 +854,16 @@ BASE_FUNCTIONS = {
     "edit_file": edit_file,
     "glob_bash": glob_bash,
     "todo_write": todo_write,
-    "load_skill": SKILL_LOADER.load_skill,
-    "compact": compact
+    "load_skill": SKILL_LOADER.load_skill
 }
 
 # 专门给 subagent 使用的函数集合
 SUB_FUNCTIONS = dict(BASE_FUNCTIONS)
 
-# 完整的函数映射（供父级使用，包含 task 工具）
+# 完整的函数映射（供父级使用，包含 task 工具和 compact 工具）
 FUNCTIONS = dict(BASE_FUNCTIONS)
 FUNCTIONS["task"] = task
+FUNCTIONS["compact"] = compact
 
 
 # --- 结构化工具调用定义 ---
