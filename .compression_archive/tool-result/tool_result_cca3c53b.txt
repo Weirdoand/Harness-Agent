@@ -1,0 +1,49 @@
+655: class TaskManager:
+656:     def __init__(self, data_dir=".task"):
+657:         self.data_dir = data_dir
+658:         self.file_path = os.path.join(self.data_dir, "tasks.json")
+659:         self.lock_path = os.path.join(self.data_dir, "tasks.lock")
+660:         
+661:         os.makedirs(self.data_dir, exist_ok=True)
+662:         
+663:         if not os.path.exists(self.file_path):
+664:             with open(self.file_path, "w", encoding="utf-8") as f:
+665:                 json.dump([], f)
+666: 
+667:     def _read_tasks(self) -> list:
+668:         with open(self.file_path, "r", encoding="utf-8") as f:
+669:             try:
+670:                 return json.load(f)
+671:             except json.JSONDecodeError:
+672:                 return []
+673: 
+674:     def _write_tasks(self, tasks: list):
+675:         with open(self.file_path, "w", encoding="utf-8") as f:
+676:             json.dump(tasks, f, ensure_ascii=False, indent=2)
+677:             
+678:     def _now(self) -> str:
+679:         return datetime.now(timezone.utc).astimezone().isoformat()
+680: 
+681:     def print_task_panel(self):
+682:         tasks = self.list_tasks()
+683:         print("\n\033[96m" + "="*15 + " 浠诲姟闈㈡澘 " + "="*15 + "\033[0m")
+684:         if not tasks:
+685:             print("  鏆傛棤浠诲姟")
+686:         else:
+687:             for i, t in enumerate(tasks, 1):
+688:                 state_flags = {
+689:                     TaskState.PENDING.value: "[ ]",
+690:                     TaskState.IN_PROCESS.value: "[-]",
+691:                     TaskState.COMPLETE.value: "[x]"
+692:                 }
+693:                 flag = state_flags.get(t["state"], "[?]")
+694:                 owner_info = f" (鎵ц�岃��: {t['owner']})" if t.get("owner") else ""
+695:                 dep_info = f" [渚濊禆: {','.join(t.get('blockBy', []))}]" if t.get("blockBy") else ""
+696:                 print(f"  {flag} {i}. {t['subject']}{owner_info}{dep_info} | ID: {t['id']}")
+697:         print("\033[96m" + "="*40 + "\033[0m\n")
+698: 
+699:     def create_task(self, subject: str, description: str) -> str:
+700:         with FileLock(self.lock_path):
+
+
+【系统提示】你已连续 3 次及以上未更新任务阶段步骤，请调用 todo_write 工具更新当前分解的子任务状态与进展。

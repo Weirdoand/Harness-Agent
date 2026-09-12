@@ -1,0 +1,48 @@
+[
+  {
+    "id": "28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758",
+    "subject": "setup database schema",
+    "description": "Design and set up the database schema.",
+    "state": "complete",
+    "owner": "agent",
+    "blockBy": [],
+    "created_at": "2026-09-13T00:21:38.635061+08:00",
+    "updated_at": "2026-09-13T00:24:59.868412+08:00"
+  },
+  {
+    "id": "b461b75b-695b-40e6-aaf4-d89c5af6de95",
+    "subject": "create API endpoints",
+    "description": "Create API endpoints. Depends on the database schema.",
+    "state": "pending",
+    "owner": null,
+    "blockBy": [
+      "28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758"
+    ],
+    "created_at": "2026-09-13T00:21:38.638221+08:00",
+    "updated_at": "2026-09-13T00:21:38.643883+08:00"
+  },
+  {
+    "id": "24a231d4-e69e-4980-a1df-b05eeb489d5e",
+    "subject": "write tests",
+    "description": "Write tests. Depends on the API endpoints.",
+    "state": "pending",
+    "owner": null,
+    "blockBy": [
+      "b461b75b-695b-40e6-aaf4-d89c5af6de95"
+    ],
+    "created_at": "2026-09-13T00:21:38.640296+08:00",
+    "updated_at": "2026-09-13T00:21:38.645950+08:00"
+  },
+  {
+    "id": "e311b609-595f-442d-8042-2728b8a6a9ce",
+    "subject": "write docs",
+    "description": "Write documentation. Depends on the database schema.",
+    "state": "pending",
+    "owner": null,
+    "blockBy": [
+      "28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758"
+    ],
+    "created_at": "2026-09-13T00:21:38.641844+08:00",
+    "updated_at": "2026-09-13T00:21:38.647698+08:00"
+  }
+]

@@ -643,6 +643,168 @@ def build_system_prompt(base_system_prompt: str, messages: list) -> str:
 SYSTEM_PROMPT = "我是一名代码工程师, 擅长将复杂任务拆分为多个小任务按步骤依次执行, 使用 todo_write 去规划你的子任务步骤, 使用 task 派发 subagent 完成需求, 或者自己完成需求, 并更新状态。不对历史提问进行任务派发和指令, 聚焦于当前对话的内容。将执行任务过程中生成的 python 脚本和其他文件单独放在一个文件夹中（如 workspace 或 outputs 目录）。" + BASE_PROMPT
 SUBAGENT_SYSTEM_PROMPT = "你是一个子任务执行助手。完成指定派发下来的 task 并将答案返回上去" + BASE_PROMPT
 
+from datetime import datetime, timezone
+from enum import Enum
+from filelock import FileLock
+
+class TaskState(str, Enum):
+    PENDING = "pending"
+    IN_PROCESS = "in_process"
+    COMPLETE = "complete"
+
+class TaskManager:
+    def __init__(self, data_dir=".task"):
+        self.data_dir = data_dir
+        self.file_path = os.path.join(self.data_dir, "tasks.json")
+        self.lock_path = os.path.join(self.data_dir, "tasks.lock")
+        
+        os.makedirs(self.data_dir, exist_ok=True)
+        
+        if not os.path.exists(self.file_path):
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                json.dump([], f)
+
+    def _read_tasks(self) -> list:
+        with open(self.file_path, "r", encoding="utf-8") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return []
+
+    def _write_tasks(self, tasks: list):
+        with open(self.file_path, "w", encoding="utf-8") as f:
+            json.dump(tasks, f, ensure_ascii=False, indent=2)
+            
+    def _now(self) -> str:
+        return datetime.now(timezone.utc).astimezone().isoformat()
+
+    def print_task_panel(self):
+        tasks = self.list_tasks()
+        print("\n\033[96m" + "="*15 + " 任务面板 " + "="*15 + "\033[0m")
+        if not tasks:
+            print("  暂无任务")
+        else:
+            for i, t in enumerate(tasks, 1):
+                state_flags = {
+                    TaskState.PENDING.value: "[ ]",
+                    TaskState.IN_PROCESS.value: "[-]",
+                    TaskState.COMPLETE.value: "[x]"
+                }
+                flag = state_flags.get(t["state"], "[?]")
+                owner_info = f" (执行者: {t['owner']})" if t.get("owner") else ""
+                dep_info = f" [依赖: {','.join(t.get('blockBy', []))}]" if t.get("blockBy") else ""
+                state_str = f"状态: {t['state']}"
+                print(f"  {flag} {i}. {t['subject']}{owner_info}{dep_info} | {state_str} | ID: {t['id']}")
+        print("\033[96m" + "="*40 + "\033[0m\n")
+
+    def create_task(self, subject: str, description: str) -> str:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            new_id = str(uuid.uuid4())
+            new_task = {
+                "id": new_id,
+                "subject": subject,
+                "description": description,
+                "state": TaskState.PENDING.value,
+                "owner": None,
+                "blockBy": [],
+                "created_at": self._now(),
+                "updated_at": self._now()
+            }
+            tasks.append(new_task)
+            self._write_tasks(tasks)
+            print(f"\033[92m[TaskManager] 成功创建新任务: {new_id} (主题: {subject})\033[0m")
+        
+        self.print_task_panel()
+        return new_id
+
+    def assign_dependencies(self, task_id: str, depends_on_ids: list) -> bool:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            task = next((t for t in tasks if t["id"] == task_id), None)
+            if not task:
+                print(f"\033[31m[TaskManager] 分配依赖失败: 未找到任务 {task_id}\033[0m")
+                return False
+            
+            task["blockBy"] = list(set(task.get("blockBy", []) + depends_on_ids))
+            task["updated_at"] = self._now()
+            self._write_tasks(tasks)
+            print(f"\033[92m[TaskManager] 任务 {task_id} 新增依赖: {depends_on_ids}\033[0m")
+            
+        self.print_task_panel()
+        return True
+
+    def claim_task(self, task_id: str, owner: str) -> dict:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            task = next((t for t in tasks if t["id"] == task_id), None)
+            
+            if not task:
+                return {"success": False, "error": "任务不存在"}
+                
+            if task["state"] != TaskState.PENDING.value:
+                return {"success": False, "error": "任务状态必须为 pending"}
+                
+            dependency_ids = task.get("blockBy", [])
+            for dep_id in dependency_ids:
+                dep_task = next((t for t in tasks if t["id"] == dep_id), None)
+                if not dep_task or dep_task["state"] != TaskState.COMPLETE.value:
+                    return {"success": False, "error": f"前置依赖任务 {dep_id} 未完成"}
+            
+            task["state"] = TaskState.IN_PROCESS.value
+            task["owner"] = owner
+            task["updated_at"] = self._now()
+            
+            self._write_tasks(tasks)
+            return {"success": True, "task": task}
+
+    def complete_task(self, task_id: str) -> list:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            task = next((t for t in tasks if t["id"] == task_id), None)
+            
+            if not task or task["state"] != TaskState.IN_PROCESS.value:
+                return []
+                
+            task["state"] = TaskState.COMPLETE.value
+            task["updated_at"] = self._now()
+            
+            unlocked_tasks = []
+            for t in tasks:
+                if t["state"] == TaskState.PENDING.value and task_id in t.get("blockBy", []):
+                    deps_completed = True
+                    for dep_id in t.get("blockBy", []):
+                        dep_task = next((dt for dt in tasks if dt["id"] == dep_id), None)
+                        if not dep_task or dep_task["state"] != TaskState.COMPLETE.value:
+                            deps_completed = False
+                            break
+                    if deps_completed:
+                        unlocked_tasks.append(t)
+                        
+            self._write_tasks(tasks)
+            return unlocked_tasks
+
+    def get_task(self, task_id: str) -> dict:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            task = next((t for t in tasks if t["id"] == task_id), None)
+            return task
+
+    def list_tasks(self, state: str = None, owner: str = None) -> list:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            
+            filtered = tasks
+            if state:
+                filtered = [t for t in filtered if t.get("state") == state]
+            if owner:
+                filtered = [t for t in filtered if t.get("owner") == owner]
+                
+            return filtered
+
+# 全局 TaskManager 实例
+task_manager = TaskManager()
+
 # --- 阶段任务管理定义 ---
 class TODOManager:
     """
@@ -715,118 +877,235 @@ def todo_write(todos: list = None, **kwargs) -> str:
 # 定义供 LLM 调用的基础工具 Schema
 BASE_TOOLS = [
     {
-        "name": "run_bash",
-        "description": "执行本地系统 cmd 或 bash 命令并获取终端输出结果。例如用来查看文件、运行脚本等。",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "command": {
-                    "type": "string"
-                }
-            },
-            "required": ["command"]
-        }
-    },
-    {
-        "name": "write_file",
-        "description": "用于创建新文件，或将已有文件完全重写（全量覆盖）。注意：这会替换掉目标文件的所有原有内容！",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "file_path": {"type": "string"},
-                "content": {"type": "string"}
-            },
-            "required": ["file_path", "content"]
-        }
-    },
-    {
-        "name": "read_file",
-        "description": "用于读取文件内容",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "file_path": {"type": "string"}
-            },
-            "required": ["file_path"]
-        }
-    },
-    {
-        "name": "edit_file",
-        "description": "用于对已有文件进行局部修改（打补丁）。通过精准匹配旧文本并替换为新文本来实现修改。",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "file_path": {"type": "string"},
-                "old_text": {"type": "string"},
-                "new_text": {"type": "string"}
-            },
-            "required": ["file_path", "old_text", "new_text"]
-        }
-    },
-    {
-        "name": "glob_bash",
-        "description": "用于查找文件，支持匹配模式表达式（例如 **/*.py）",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "pattern": {"type": "string"}
-            },
-            "required": ["pattern"]
-        }
-    },
-    {
-        "name": "todo_write",
-        "description": "更新任务阶段列表与各步骤的执行状态。用于将复杂任务划分为各个小阶段并跟踪进度。",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "todos": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "task": {
-                                "type": "string"
-                            },
-                            "status": {
-                                "type": "string",
-                                "enum": ["pending", "in_progress", "completed"]
-                            }
-                        },
-                        "required": ["task", "status"]
+        "type": "function",
+        "function": {
+            "name": "run_bash",
+            "description": "执行本地系统 cmd 或 bash 命令并获取终端输出结果。例如用来查看文件、运行脚本等。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string"
                     }
-                }
-            },
-            "required": ["todos"]
+                },
+                "required": ["command"]
+            }
         }
     },
     {
-        "name": "load_skill",
-        "description": "加载指定技能的 SKILL.md 内容，获取技能的详细指南和约束。",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "skill_name": {"type": "string"}
-            },
-            "required": ["skill_name"]
+        "type": "function",
+        "function": {
+            "name": "write_file",
+            "description": "用于创建新文件，或将已有文件完全重写（全量覆盖）。注意：这会替换掉目标文件的所有原有内容！",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {"type": "string"},
+                    "content": {"type": "string"}
+                },
+                "required": ["file_path", "content"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "read_file",
+            "description": "用于读取文件内容",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {"type": "string"}
+                },
+                "required": ["file_path"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "edit_file",
+            "description": "用于对已有文件进行局部修改（打补丁）。通过精准匹配旧文本并替换为新文本来实现修改。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "file_path": {"type": "string"},
+                    "old_text": {"type": "string"},
+                    "new_text": {"type": "string"}
+                },
+                "required": ["file_path", "old_text", "new_text"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "glob_bash",
+            "description": "用于查找文件，支持匹配模式表达式（例如 **/*.py）",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "pattern": {"type": "string"}
+                },
+                "required": ["pattern"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "todo_write",
+            "description": "更新任务阶段列表与各步骤的执行状态。用于将复杂任务划分为各个小阶段并跟踪进度。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "todos": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "task": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string",
+                                    "enum": ["pending", "in_progress", "completed"]
+                                }
+                            },
+                            "required": ["task", "status"]
+                        }
+                    }
+                },
+                "required": ["todos"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "load_skill",
+            "description": "加载指定技能的 SKILL.md 内容，获取技能的详细指南和约束。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "skill_name": {"type": "string"}
+                },
+                "required": ["skill_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_task",
+            "description": "创建一个新任务，生成 UUID，状态设为 pending，并保存到本地。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "subject": {"type": "string"},
+                    "description": {"type": "string"}
+                },
+                "required": ["subject", "description"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "assign_dependencies",
+            "description": "对指定任务进行依赖分配，将 depends_on_ids 加入到目标任务的 blockBy 列表中。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string"},
+                    "depends_on_ids": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    }
+                },
+                "required": ["task_id", "depends_on_ids"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "claim_task",
+            "description": "认领一个状态为 pending 的任务，校验前置依赖完成后，将状态修改为 in_process 并记录 owner。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string"},
+                    "owner": {"type": "string"}
+                },
+                "required": ["task_id", "owner"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "complete_task",
+            "description": "将一个状态为 in_process 的任务标记为 complete，并返回刚刚因为此任务完成而彻底解除阻塞的下游可接手任务列表。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string"}
+                },
+                "required": ["task_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_task",
+            "description": "根据 ID 查找并返回单一任务的完整字段详情。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string"}
+                },
+                "required": ["task_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_tasks",
+            "description": "根据条件过滤返回任务集合。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "state": {"type": "string"},
+                    "owner": {"type": "string"}
+                }
+            }
         }
     }
 ]
 
 compact_schema = {
-    "name": "compact",
-    "description": "显式触发上下文压缩。当你认为当前的对话已经非常长，或者完成了一个重要阶段，可以调用此工具来总结历史对话，释放上下文空间。"
+    "type": "function",
+    "function": {
+        "name": "compact",
+        "description": "显式触发上下文压缩。当你认为当前的对话已经非常长，或者完成了一个重要阶段，可以调用此工具来总结历史对话，释放上下文空间。"
+    }
 }
 
 task_schema = {
-    "name": "task",
-    "description": "派发子任务给 subagent 执行。适用于独立或复杂的子需求。",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "instruction": {"type": "string"}
-        },
-        "required": ["instruction"]
+    "type": "function",
+    "function": {
+        "name": "task",
+        "description": "派发子任务给 subagent 执行。适用于独立或复杂的子需求。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "instruction": {"type": "string"}
+            },
+            "required": ["instruction"]
+        }
     }
 }
 
@@ -835,6 +1114,7 @@ SUB_TOOLS = list(BASE_TOOLS)
 
 # 供父级 Agent 调用的完整工具集合（包含派发子代理的 task 工具和 compact 工具）
 TOOLS = BASE_TOOLS + [task_schema, compact_schema]
+
 
 
 def compact(**kwargs) -> str:
@@ -854,7 +1134,13 @@ BASE_FUNCTIONS = {
     "edit_file": edit_file,
     "glob_bash": glob_bash,
     "todo_write": todo_write,
-    "load_skill": SKILL_LOADER.load_skill
+    "load_skill": SKILL_LOADER.load_skill,
+    "create_task": task_manager.create_task,
+    "assign_dependencies": task_manager.assign_dependencies,
+    "claim_task": task_manager.claim_task,
+    "complete_task": task_manager.complete_task,
+    "get_task": task_manager.get_task,
+    "list_tasks": task_manager.list_tasks
 }
 
 # 专门给 subagent 使用的函数集合

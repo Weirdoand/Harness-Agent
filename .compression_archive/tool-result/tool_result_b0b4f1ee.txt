@@ -1,0 +1,115 @@
+import task_manager failed: ModuleNotFoundError("No module named 'task_manager'")
+loaded TaskManager from: llm_chat
+[92m[TaskManager] 成功创建新任务: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758 (主题: setup database schema)[0m
+
+[96m=============== 任务面板 ===============[0m
+  [ ] 1. setup database schema | ID: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758
+[96m========================================[0m
+
+[92m[TaskManager] 成功创建新任务: b461b75b-695b-40e6-aaf4-d89c5af6de95 (主题: create API endpoints)[0m
+
+[96m=============== 任务面板 ===============[0m
+  [ ] 1. setup database schema | ID: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758
+  [ ] 2. create API endpoints | ID: b461b75b-695b-40e6-aaf4-d89c5af6de95
+[96m========================================[0m
+
+[92m[TaskManager] 成功创建新任务: 24a231d4-e69e-4980-a1df-b05eeb489d5e (主题: write tests)[0m
+
+[96m=============== 任务面板 ===============[0m
+  [ ] 1. setup database schema | ID: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758
+  [ ] 2. create API endpoints | ID: b461b75b-695b-40e6-aaf4-d89c5af6de95
+  [ ] 3. write tests | ID: 24a231d4-e69e-4980-a1df-b05eeb489d5e
+[96m========================================[0m
+
+[92m[TaskManager] 成功创建新任务: e311b609-595f-442d-8042-2728b8a6a9ce (主题: write docs)[0m
+
+[96m=============== 任务面板 ===============[0m
+  [ ] 1. setup database schema | ID: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758
+  [ ] 2. create API endpoints | ID: b461b75b-695b-40e6-aaf4-d89c5af6de95
+  [ ] 3. write tests | ID: 24a231d4-e69e-4980-a1df-b05eeb489d5e
+  [ ] 4. write docs | ID: e311b609-595f-442d-8042-2728b8a6a9ce
+[96m========================================[0m
+
+[92m[TaskManager] 任务 b461b75b-695b-40e6-aaf4-d89c5af6de95 新增依赖: ['28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758'][0m
+
+[96m=============== 任务面板 ===============[0m
+  [ ] 1. setup database schema | ID: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758
+  [ ] 2. create API endpoints [依赖: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758] | ID: b461b75b-695b-40e6-aaf4-d89c5af6de95
+  [ ] 3. write tests | ID: 24a231d4-e69e-4980-a1df-b05eeb489d5e
+  [ ] 4. write docs | ID: e311b609-595f-442d-8042-2728b8a6a9ce
+[96m========================================[0m
+
+[92m[TaskManager] 任务 24a231d4-e69e-4980-a1df-b05eeb489d5e 新增依赖: ['b461b75b-695b-40e6-aaf4-d89c5af6de95'][0m
+
+[96m=============== 任务面板 ===============[0m
+  [ ] 1. setup database schema | ID: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758
+  [ ] 2. create API endpoints [依赖: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758] | ID: b461b75b-695b-40e6-aaf4-d89c5af6de95
+  [ ] 3. write tests [依赖: b461b75b-695b-40e6-aaf4-d89c5af6de95] | ID: 24a231d4-e69e-4980-a1df-b05eeb489d5e
+  [ ] 4. write docs | ID: e311b609-595f-442d-8042-2728b8a6a9ce
+[96m========================================[0m
+
+[92m[TaskManager] 任务 e311b609-595f-442d-8042-2728b8a6a9ce 新增依赖: ['28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758'][0m
+
+[96m=============== 任务面板 ===============[0m
+  [ ] 1. setup database schema | ID: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758
+  [ ] 2. create API endpoints [依赖: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758] | ID: b461b75b-695b-40e6-aaf4-d89c5af6de95
+  [ ] 3. write tests [依赖: b461b75b-695b-40e6-aaf4-d89c5af6de95] | ID: 24a231d4-e69e-4980-a1df-b05eeb489d5e
+  [ ] 4. write docs [依赖: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758] | ID: e311b609-595f-442d-8042-2728b8a6a9ce
+[96m========================================[0m
+
+
+[96m=============== 任务面板 ===============[0m
+  [ ] 1. setup database schema | ID: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758
+  [ ] 2. create API endpoints [依赖: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758] | ID: b461b75b-695b-40e6-aaf4-d89c5af6de95
+  [ ] 3. write tests [依赖: b461b75b-695b-40e6-aaf4-d89c5af6de95] | ID: 24a231d4-e69e-4980-a1df-b05eeb489d5e
+  [ ] 4. write docs [依赖: 28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758] | ID: e311b609-595f-442d-8042-2728b8a6a9ce
+[96m========================================[0m
+
+[
+  {
+    "id": "28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758",
+    "subject": "setup database schema",
+    "description": "Design and set up the database schema.",
+    "state": "pending",
+    "owner": null,
+    "blockBy": [],
+    "created_at": "2026-09-13T00:21:38.635061+08:00",
+    "updated_at": "2026-09-13T00:21:38.635593+08:00"
+  },
+  {
+    "id": "b461b75b-695b-40e6-aaf4-d89c5af6de95",
+    "subject": "create API endpoints",
+    "description": "Create API endpoints. Depends on the database schema.",
+    "state": "pending",
+    "owner": null,
+    "blockBy": [
+      "28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758"
+    ],
+    "created_at": "2026-09-13T00:21:38.638221+08:00",
+    "updated_at": "2026-09-13T00:21:38.643883+08:00"
+  },
+  {
+    "id": "24a231d4-e69e-4980-a1df-b05eeb489d5e",
+    "subject": "write tests",
+    "description": "Write tests. Depends on the API endpoints.",
+    "state": "pending",
+    "owner": null,
+    "blockBy": [
+      "b461b75b-695b-40e6-aaf4-d89c5af6de95"
+    ],
+    "created_at": "2026-09-13T00:21:38.640296+08:00",
+    "updated_at": "2026-09-13T00:21:38.645950+08:00"
+  },
+  {
+    "id": "e311b609-595f-442d-8042-2728b8a6a9ce",
+    "subject": "write docs",
+    "description": "Write documentation. Depends on the database schema.",
+    "state": "pending",
+    "owner": null,
+    "blockBy": [
+      "28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758"
+    ],
+    "created_at": "2026-09-13T00:21:38.641844+08:00",
+    "updated_at": "2026-09-13T00:21:38.647698+08:00"
+  }
+]

@@ -1,5 +1,15 @@
+- [complete_task 方法行为](complete_task 方法行为.md) - complete_task 方法更新任务状态并解锁依赖任务
+- [Harness-Agent TaskManager 导入方式](Harness-Agent TaskManager 导入方式.md) - 在 Harness-Agent 环境中导入 TaskManager 时 task_manager 模块不存在，需从 llm_chat 加载。
+- [Harness-Agent workspace 路径](Harness-Agent workspace 路径.md) - Harness-Agent 的工作目录与归档目录位置。
 - [Tab Indentation Preference](Tab Indentation Preference.md) - User prefers tabs for indentation in code.
+- [TaskManager 模块位置](TaskManager 模块位置.md) - TaskManager 类位于 llm_chat 模块，而非 task_manager 模块
+- [todo_write 阶段更新要求](todo_write 阶段更新要求.md) - Harness-Agent 要求定期调用 todo_write 更新子任务状态。
 - [不喜欢 static](不喜欢 static.md) - 用户表示不喜欢 static，但具体指代和范围尚未明确。
+- [任务依赖图与ID](任务依赖图与ID.md) - 项目任务及其依赖关系：数据库schema -> API端点 -> 测试；数据库schema -> 文档。
+- [任务依赖图创建流程](任务依赖图创建流程.md) - 在 Harness-Agent 中用 TaskManager 创建带依赖关系任务的标准步骤。
+- [任务管理工具函数](任务管理工具函数.md) - 任务管理系统提供的工具函数列表
+- [定期更新任务阶段](定期更新任务阶段.md) - 系统提示在连续多次未更新任务阶段时提醒调用 todo_write
 - [对 static 的偏好](对 static 的偏好.md) - 用户不喜欢 'static'，但具体含义和适用范围待确认。
 - [缩进偏好](缩进偏好.md) - 用户偏好使用制表符（tabs）进行缩进，新代码用制表符，已有文件沿用原有风格。
 - [缩进风格偏好](缩进风格偏好.md) - 用户偏好使用制表符进行缩进，新代码用制表符，已有文件保持原风格。
+- [项目任务分解与依赖关系](项目任务分解与依赖关系.md) - 记录项目四个开发任务及其依赖关系。

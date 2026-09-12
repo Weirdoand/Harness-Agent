@@ -1,0 +1,99 @@
+6:from dataclasses import dataclass, field
+41:class Compression:
+51:    def __init__(self, client, model, archive_dir="./.compression_archive"):
+58:    def _save_to_file(self, content: str, prefix="archive") -> str:
+69:    def _get_context_size(self, messages: list) -> int:
+72:    def prepare(self, messages: list):
+82:    def _strategy_1_tool_truncation(self, messages: list):
+97:    def _strategy_2_windowing(self, messages: list):
+130:    def _strategy_3_dynamic_eviction(self, messages: list):
+164:    def _strategy_4_llm_summarization(self, messages: list, retain_recent=0):
+201:    def _generate_summary_message(self, prompt: str, path: str, user_request: str = "") -> dict:
+221:    def handle_error_recovery(self, messages: list) -> bool:
+231:class SkillLoader:
+232:    def __init__(self):
+235:    def scan(self, path: Path):
+245:    def _parse_skill(self, file_path: Path):
+264:    def load_skill(self, skill_name: str) -> str:
+270:    def get_skill_prompt(self) -> str:
+282:def run_bash(command: str) -> str:
+303:def write_file(file_path: str, content: str) -> str:
+312:def read_file(file_path: str) -> str:
+320:def edit_file(file_path: str, old_text: str, new_text: str) -> str:
+347:def glob_bash(pattern: str) -> str:
+366:class Memory:
+367:    def __init__(self, workspace_dir: str):
+372:    def read_memory_record(self, file_path: Path) -> dict:
+402:    def write_memory_record(self, record: dict):
+416:    def load_index(self) -> str:
+421:    def rebuild_index(self):
+435:    def select_relevant_memories(self, messages: list) -> list:
+469:    def load_selected_memories(self, selected_files: list) -> list:
+485:    def summarize_and_store(self, messages: list, **kwargs):
+550:    def consolidate_memories(self):
+609:def build_system_prompt(base_system_prompt: str, messages: list) -> str:
+650:class TaskState(str, Enum):
+655:class TaskManager:
+656:    def __init__(self, data_dir=".task"):
+657:        self.data_dir = data_dir
+658:        self.file_path = os.path.join(self.data_dir, "tasks.json")
+659:        self.lock_path = os.path.join(self.data_dir, "tasks.lock")
+661:        os.makedirs(self.data_dir, exist_ok=True)
+667:    def _read_tasks(self) -> list:
+674:    def _write_tasks(self, tasks: list):
+678:    def _now(self) -> str:
+681:    def print_task_panel(self):
+689:                    TaskState.PENDING.value: "[ ]",
+690:                    TaskState.IN_PROCESS.value: "[-]",
+691:                    TaskState.COMPLETE.value: "[x]"
+699:    def create_task(self, subject: str, description: str) -> str:
+707:                "state": TaskState.PENDING.value,
+715:            print(f"\033[92m[TaskManager] 鎴愬姛鍒涘缓鏂颁换鍔�: {new_id} (涓婚��: {subject})\033[0m")
+720:    def assign_dependencies(self, task_id: str, depends_on_ids: list) -> bool:
+725:                print(f"\033[31m[TaskManager] 鍒嗛厤渚濊禆澶辫触: 鏈�鎵惧埌浠诲姟 {task_id}\033[0m")
+731:            print(f"\033[92m[TaskManager] 浠诲姟 {task_id} 鏂板�炰緷璧�: {depends_on_ids}\033[0m")
+736:    def claim_task(self, task_id: str, owner: str) -> dict:
+744:            if task["state"] != TaskState.PENDING.value:
+750:                if not dep_task or dep_task["state"] != TaskState.COMPLETE.value:
+753:            task["state"] = TaskState.IN_PROCESS.value
+760:    def complete_task(self, task_id: str) -> list:
+765:            if not task or task["state"] != TaskState.IN_PROCESS.value:
+768:            task["state"] = TaskState.COMPLETE.value
+773:                if t["state"] == TaskState.PENDING.value and task_id in t.get("blockBy", []):
+777:                        if not dep_task or dep_task["state"] != TaskState.COMPLETE.value:
+786:    def get_task(self, task_id: str) -> dict:
+792:    def list_tasks(self, state: str = None, owner: str = None) -> list:
+804:# 鍏ㄥ眬 TaskManager 瀹炰緥
+805:task_manager = TaskManager()
+808:class TODOManager:
+819:    def __init__(self):
+820:        self.tasks = []
+822:    def update(self, todos: list = None, **kwargs) -> str:
+849:        self.tasks = new_tasks
+853:    def log(self) -> str:
+858:        if not self.tasks:
+861:        for idx, item in enumerate(self.tasks, 1):
+869:def todo_write(todos: list = None, **kwargs) -> str:
+999:            "name": "create_task",
+1119:def compact(**kwargs) -> str:
+1123:def task(instruction: str, **kwargs) -> str:
+1149:@dataclass
+1150:class ToolCall:
+1156:    args: dict = field(default_factory=dict)
+1159:    @classmethod
+1160:    def from_raw(cls, raw_tool_call) -> "ToolCall":
+1190:def register_hook(stage: str, hook_func: callable) -> None:
+1201:def unregister_hook(stage: str, hook_func: callable) -> bool:
+1214:def hook_reset_tool_stats(**kwargs):
+1223:def hook_log_user_input(user_input: str, messages: list = None, **kwargs):
+1249:def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
+1252:    def _ask_user(question: str) -> bool:
+1286:def hook_log_tool_intent(tool: ToolCall, **kwargs):
+1291:def hook_log_tool_result(tool: ToolCall, **kwargs):
+1298:def hook_record_tool_use(tool: ToolCall, **kwargs):
+1304:def hook_log_final_output_and_stats(final_content: str, messages: list = None, **kwargs):
+1322:def trigger_hooks(stage: str, **kwargs) -> list:
+1342:def execute_function(tool: ToolCall, available_funcs: dict, messages: list) -> str:
+1381:def handle_tool_call(raw_tool_call, available_funcs: dict, messages: list) -> bool:
+1418:def run_subagent(instruction: str, **kwargs) -> str:
+1465:def agent_loop(messages: list = None, latest_user_input: str = "") -> list:

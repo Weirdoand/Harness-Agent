@@ -1,0 +1,175 @@
+class TaskState(str, Enum):
+    PENDING = "pending"
+    IN_PROCESS = "in_process"
+    COMPLETE = "complete"
+
+class TaskManager:
+    def __init__(self, data_dir=".task"):
+        self.data_dir = data_dir
+        self.file_path = os.path.join(self.data_dir, "tasks.json")
+        self.lock_path = os.path.join(self.data_dir, "tasks.lock")
+        
+        os.makedirs(self.data_dir, exist_ok=True)
+        
+        if not os.path.exists(self.file_path):
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                json.dump([], f)
+
+    def _read_tasks(self) -> list:
+        with open(self.file_path, "r", encoding="utf-8") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return []
+
+    def _write_tasks(self, tasks: list):
+        with open(self.file_path, "w", encoding="utf-8") as f:
+            json.dump(tasks, f, ensure_ascii=False, indent=2)
+            
+    def _now(self) -> str:
+        return datetime.now(timezone.utc).astimezone().isoformat()
+
+    def print_task_panel(self):
+        tasks = self.list_tasks()
+        print("\n\033[96m" + "="*15 + " 浠诲姟闈㈡澘 " + "="*15 + "\033[0m")
+        if not tasks:
+            print("  鏆傛棤浠诲姟")
+        else:
+            for i, t in enumerate(tasks, 1):
+                state_flags = {
+                    TaskState.PENDING.value: "[ ]",
+                    TaskState.IN_PROCESS.value: "[-]",
+                    TaskState.COMPLETE.value: "[x]"
+                }
+                flag = state_flags.get(t["state"], "[?]")
+                owner_info = f" (鎵ц�岃�? {t['owner']})" if t.get("owner") else ""
+                dep_info = f" [渚濊禆: {','.join(t.get('blockBy', []))}]" if t.get("blockBy") else ""
+                print(f"  {flag} {i}. {t['subject']}{owner_info}{dep_info} | ID: {t['id']}")
+        print("\033[96m" + "="*40 + "\033[0m\n")
+
+    def create_task(self, subject: str, description: str) -> str:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            new_id = str(uuid.uuid4())
+            new_task = {
+                "id": new_id,
+                "subject": subject,
+                "description": description,
+                "state": TaskState.PENDING.value,
+                "owner": None,
+                "blockBy": [],
+                "created_at": self._now(),
+                "updated_at": self._now()
+            }
+            tasks.append(new_task)
+            self._write_tasks(tasks)
+            print(f"\033[92m[TaskManager] 鎴愬姛鍒涘缓鏂颁换鍔? {new_id} (涓婚��: {subject})\033[0m")
+        
+        self.print_task_panel()
+        return new_id
+
+    def assign_dependencies(self, task_id: str, depends_on_ids: list) -> bool:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            task = next((t for t in tasks if t["id"] == task_id), None)
+            if not task:
+                print(f"\033[31m[TaskManager] 鍒嗛厤渚濊禆澶辫触: 鏈�鎵惧埌浠诲�?{task_id}\033[0m")
+                return False
+            
+            task["blockBy"] = list(set(task.get("blockBy", []) + depends_on_ids))
+            task["updated_at"] = self._now()
+            self._write_tasks(tasks)
+            print(f"\033[92m[TaskManager] 浠诲姟 {task_id} 鏂板�炰緷璧�: {depends_on_ids}\033[0m")
+            
+        self.print_task_panel()
+        return True
+
+    def claim_task(self, task_id: str, owner: str) -> dict:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            task = next((t for t in tasks if t["id"] == task_id), None)
+            
+            if not task:
+                return {"success": False, "error": "浠诲姟涓嶅瓨鍦?}
+                
+            if task["state"] != TaskState.PENDING.value:
+                return {"success": False, "error": "浠诲姟鐘舵�佸繀椤讳负 pending"}
+                
+            dependency_ids = task.get("blockBy", [])
+            for dep_id in dependency_ids:
+                dep_task = next((t for t in tasks if t["id"] == dep_id), None)
+                if not dep_task or dep_task["state"] != TaskState.COMPLETE.value:
+                    return {"success": False, "error": f"鍓嶇疆渚濊禆浠诲姟 {dep_id} 鏈�瀹屾�?}
+            
+            task["state"] = TaskState.IN_PROCESS.value
+            task["owner"] = owner
+            task["updated_at"] = self._now()
+            
+            self._write_tasks(tasks)
+            return {"success": True, "task": task}
+
+    def complete_task(self, task_id: str) -> list:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            task = next((t for t in tasks if t["id"] == task_id), None)
+            
+            if not task or task["state"] != TaskState.IN_PROCESS.value:
+                return []
+                
+            task["state"] = TaskState.COMPLETE.value
+            task["updated_at"] = self._now()
+            
+            unlocked_tasks = []
+            for t in tasks:
+                if t["state"] == TaskState.PENDING.value and task_id in t.get("blockBy", []):
+                    deps_completed = True
+                    for dep_id in t.get("blockBy", []):
+                        dep_task = next((dt for dt in tasks if dt["id"] == dep_id), None)
+                        if not dep_task or dep_task["state"] != TaskState.COMPLETE.value:
+                            deps_completed = False
+                            break
+                    if deps_completed:
+                        unlocked_tasks.append(t)
+                        
+            self._write_tasks(tasks)
+            return unlocked_tasks
+
+    def get_task(self, task_id: str) -> dict:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            task = next((t for t in tasks if t["id"] == task_id), None)
+            return task
+
+    def list_tasks(self, state: str = None, owner: str = None) -> list:
+        with FileLock(self.lock_path):
+            tasks = self._read_tasks()
+            
+            filtered = tasks
+            if state:
+                filtered = [t for t in filtered if t.get("state") == state]
+            if owner:
+                filtered = [t for t in filtered if t.get("owner") == owner]
+                
+            return filtered
+
+# 鍏ㄥ眬 TaskManager 瀹炰緥
+task_manager = TaskManager()
+
+# --- 闃舵�典换鍔＄�＄悊瀹氫箟 ---
+class TODOManager:
+    """
+    绠＄悊澶嶆潅浠诲姟鐨勯樁娈垫�ラ�や笌鎵ц�岀姸鎬併�?
+    灏嗕换鍔″垝鍒嗕负鍚勪釜灏忛樁娈典换鍔¤繘琛屼緷娆″�勭悊銆?
+    """
+    STATUS_FLAGS = {
+        "pending": "[ ]",
+        "in_progress": "[-]",
+        "completed": "[x]"
+    }
+
+    def __init__(self):
+        self.tasks = []
+
+
+
+【系统提示】你已连续 3 次及以上未更新任务阶段步骤，请调用 todo_write 工具更新当前分解的子任务状态与进展。
