@@ -1,6 +1,10 @@
 - [complete_task 方法行为](complete_task 方法行为.md) - complete_task 方法更新任务状态并解锁依赖任务
 - [Harness-Agent TaskManager 导入方式](Harness-Agent TaskManager 导入方式.md) - 在 Harness-Agent 环境中导入 TaskManager 时 task_manager 模块不存在，需从 llm_chat 加载。
 - [Harness-Agent workspace 路径](Harness-Agent workspace 路径.md) - Harness-Agent 的工作目录与归档目录位置。
+- [Harness-Agent 没有 package.json](Harness-Agent 没有 package.json.md) - 该项目不存在 package.json，npm install 会以 ENOENT 失败；仅有一个内容为空的 package-lock.json
+- [Harness-Agent 项目目录与结构](Harness-Agent 项目目录与结构.md) - 工作目录 H:\AI Files\Harness-Agent 的顶层内容，以 Python 文件为主，含 skills/workspace/.memory/.task 等目录
+- [Project Markdown files](Project Markdown files.md) - List of all Markdown files in the project, including skills documentation and requirement documents.
+- [skills 技能文档结构](skills 技能文档结构.md) - skills/ 目录下的四个技能包及其 SKILL.md 与 references 子目录结构。
 - [Tab Indentation Preference](Tab Indentation Preference.md) - User prefers tabs for indentation in code.
 - [TaskManager 模块位置](TaskManager 模块位置.md) - TaskManager 类位于 llm_chat 模块，而非 task_manager 模块
 - [todo_write 阶段更新要求](todo_write 阶段更新要求.md) - Harness-Agent 要求定期调用 todo_write 更新子任务状态。
@@ -8,8 +12,15 @@
 - [任务依赖图与ID](任务依赖图与ID.md) - 项目任务及其依赖关系：数据库schema -> API端点 -> 测试；数据库schema -> 文档。
 - [任务依赖图创建流程](任务依赖图创建流程.md) - 在 Harness-Agent 中用 TaskManager 创建带依赖关系任务的标准步骤。
 - [任务管理工具函数](任务管理工具函数.md) - 任务管理系统提供的工具函数列表
+- [后台任务机制](后台任务机制.md) - 后台任务异步执行，完成后结果自动注入上下文
 - [定期更新任务阶段](定期更新任务阶段.md) - 系统提示在连续多次未更新任务阶段时提醒调用 todo_write
 - [对 static 的偏好](对 static 的偏好.md) - 用户不喜欢 'static'，但具体含义和适用范围待确认。
 - [缩进偏好](缩进偏好.md) - 用户偏好使用制表符（tabs）进行缩进，新代码用制表符，已有文件沿用原有风格。
 - [缩进风格偏好](缩进风格偏好.md) - 用户偏好使用制表符进行缩进，新代码用制表符，已有文件保持原风格。
+- [需求文档目录结构](需求文档目录结构.md) - 需求文档/ 目录下放置背景、任务、上下文三份主需求文档，以及 Memory 子目录中的需求与修改文档。
+- [项目 Markdown 文件清单](项目 Markdown 文件清单.md) - 项目中所有 Markdown 文件（含子目录）的完整列表，可直接用于索引与检索。
+- [项目 Python 文件清单](项目 Python 文件清单.md) - 截至本次对话，项目目录下找到的 Python 文件列表与分布。
+- [项目Markdown文件列表](项目Markdown文件列表.md) - 项目根目录下所有Markdown文件的完整路径列表，包括skills和需求文档子目录。
+- [项目Markdown文件清单](项目Markdown文件清单.md) - 项目根目录下包含 skills 和 需求文档 两个目录，其中共有10个Markdown文件。
+- [项目Markdown文档结构](项目Markdown文档结构.md) - 项目包含 skills 技能文档与需求文档两类共 10 个 Markdown 文件
 - [项目任务分解与依赖关系](项目任务分解与依赖关系.md) - 记录项目四个开发任务及其依赖关系。

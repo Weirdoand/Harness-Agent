@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import yaml
 from pathlib import Path
+import threading
+import time
 
 # ---------- 全局运行参数 ----------
 MAX_SUBAGENT_ITERATIONS = 30   # run_subagent 子代理最大迭代轮数
@@ -36,6 +38,104 @@ except Exception as e:
         f"初始化 LLM 客户端失败，请检查 .env 中的 LLM_API_KEY / LLM_BASE_URL / LLM_MODEL 配置: {e}"
     ) from e
 
+
+
+# ---------- 后台任务管理 ----------
+class BackgroundManager:
+    def __init__(self):
+        self.tasks = {}
+
+    def submit_task(self, tool_name: str, func, kwargs: dict) -> str:
+        # 并发限制：最大5个
+        active_tasks = sum(1 for t in self.tasks.values() if t["status"] == "RUNNING")
+        if active_tasks >= 5:
+            raise Exception("后台任务并发数已达到上限 (5个)，请等待部分任务完成或主动终止不需要的任务。")
+            
+        bg_id = str(uuid.uuid4())[:8]
+        self.tasks[bg_id] = {
+            "tool_name": tool_name,
+            "status": "RUNNING",
+            "result": None,
+            "notified": False,
+            "process": None
+        }
+        
+        if tool_name == "run_bash":
+            command = kwargs.get("command", "")
+            print(f"\033[96m[Background Task] 任务 {bg_id} 已在后台启动: bash {command}\033[0m")
+            def run_target():
+                try:
+                    process = subprocess.Popen(
+                        command,
+                        shell=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        errors='replace'
+                    )
+                    self.tasks[bg_id]["process"] = process
+                    
+                    try:
+                        output, _ = process.communicate(timeout=kwargs.get("timeout", 600))
+                        if not output.strip():
+                            output = "命令执行成功，无输出内容。"
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        output, _ = process.communicate()
+                        output += "\n[Background Task Timeout (600s)]"
+                        
+                    self.tasks[bg_id]["result"] = output
+                    self.tasks[bg_id]["status"] = "COMPLETED"
+                except Exception as e:
+                    self.tasks[bg_id]["result"] = f"执行出错: {str(e)}"
+                    self.tasks[bg_id]["status"] = "FAILED"
+
+            t = threading.Thread(target=run_target, daemon=True)
+            t.start()
+        else:
+            print(f"\033[96m[Background Task] 任务 {bg_id} 已在后台启动: {tool_name}\033[0m")
+            def run_target():
+                try:
+                    call_args = {k: v for k, v in kwargs.items() if k != "background"}
+                    result = str(func(**call_args))
+                    self.tasks[bg_id]["result"] = result
+                    self.tasks[bg_id]["status"] = "COMPLETED"
+                except Exception as e:
+                    self.tasks[bg_id]["result"] = f"执行出错: {str(e)}"
+                    self.tasks[bg_id]["status"] = "FAILED"
+            t = threading.Thread(target=run_target, daemon=True)
+            t.start()
+            
+        return bg_id
+
+    def get_status(self, bg_id: str) -> str:
+        return self.tasks.get(bg_id, {}).get("status", "NOT_FOUND")
+
+    def kill_task(self, bg_id: str) -> bool:
+        task = self.tasks.get(bg_id)
+        if not task or task["status"] != "RUNNING":
+            return False
+            
+        if task.get("process"):
+            try:
+                task["process"].kill()
+            except:
+                pass
+        task["status"] = "KILLED"
+        task["result"] = "已被用户或系统主动终止"
+        return True
+        
+    def check_completed_tasks(self) -> list:
+        notifications = []
+        for bg_id, task in self.tasks.items():
+            if task["status"] in ["COMPLETED", "FAILED", "KILLED"] and not task.get("notified"):
+                task["notified"] = True
+                status = task["status"]
+                res = task["result"]
+                notifications.append(f"[Background Task {bg_id} {status}]\n{res}")
+        return notifications
+
+bg_manager = BackgroundManager()
 
 # ---------- 上下文压缩配置 & 类 ----------
 class Compression:
@@ -80,7 +180,6 @@ class Compression:
             self._strategy_4_llm_summarization(messages)
             
     def _strategy_1_tool_truncation(self, messages: list):
-        print(f"\033[36m[Context Compression] 开始执行策略一：工具结果截断...\033[0m")
             
         tool_messages = [msg for msg in messages if msg.get("role") == "tool" and "content" in msg]
         
@@ -92,10 +191,8 @@ class Compression:
                 path = self._save_to_file(content, prefix="tool_result")
                 msg["content"] = f"[本地归档路径]: {path}\n[结果前缀]:\n{content[:self.TOOL_RESULT_PREVIEW_LENGTH]}...\n[其余内容已被策略一截断保存至本地]"
         
-        print(f"\033[36m[Context Compression] 策略一执行完毕。\033[0m")
 
     def _strategy_2_windowing(self, messages: list):
-        print(f"\033[36m[Context Compression] 开始执行策略二：滑动窗口裁剪...\033[0m")
         if len(messages) > self.MAX_MESSAGE_COUNT:
             head_end = self.HEAD_RETAIN_COUNT
             # 调整头部保留边界：如果截断点在tool上，则一直递增到首个不是tool的消息
@@ -108,7 +205,6 @@ class Compression:
                 tail_start -= 1
 
             if head_end >= tail_start:
-                print(f"\033[36m[Context Compression] 策略二取消：裁剪边界重叠。\033[0m")
                 return
 
             archived_content = json.dumps(messages, ensure_ascii=False, indent=2)
@@ -123,16 +219,11 @@ class Compression:
                 "content": f"已裁剪中间 {middle_count} 条消息。\n完整存档地址: {path}"
             }
             messages[:] = head + [notice_msg] + tail
-            print(f"\033[36m[Context Compression] 策略二执行完毕 (移除了 {middle_count} 条)。\033[0m")
-        else:
-            print(f"\033[36m[Context Compression] 策略二跳过：消息总数正常。\033[0m")
 
     def _strategy_3_dynamic_eviction(self, messages: list):
-        print(f"\033[36m[Context Compression] 开始执行策略三：深度归档压缩...\033[0m")
         target_size = self.MAX_TOTAL_CONTEXT_SIZE * self.SAFE_CONTEXT_RATIO
         
         if self._get_context_size(messages) <= target_size:
-            print(f"\033[36m[Context Compression] 策略三跳过：上下文大小已达标。\033[0m")
             return
             
         tool_messages = [msg for msg in messages if msg.get("role") == "tool" and "content" in msg]
@@ -158,11 +249,9 @@ class Compression:
             
             if self._get_context_size(messages) <= target_size:
                 break
-        print(f"\033[36m[Context Compression] 策略三执行完毕。\033[0m")
 
 
     def _strategy_4_llm_summarization(self, messages: list, retain_recent=0):
-        print(f"\033[36m[Context Compression] 开始执行策略四：LLM 上下文智能总结...\033[0m")
         archived_content = json.dumps(messages, ensure_ascii=False, indent=2)
         path = self._save_to_file(archived_content, prefix="llm_summary_archive")
         
@@ -196,7 +285,6 @@ class Compression:
         
         summary_msg = self._generate_summary_message(prompt, path, user_request)
         messages[:] = [summary_msg] + retained
-        print(f"\033[36m[Context Compression] 策略四执行完毕。\033[0m")
 
     def _generate_summary_message(self, prompt: str, path: str, user_request: str = "") -> dict:
         try:
@@ -874,18 +962,41 @@ def todo_write(todos: list = None, **kwargs) -> str:
     # 2. update的最后直接调用log, 不要再todo_write来调用
     return todo_manager.update(todos=todos, **kwargs)
 
+
+def manage_task(action: str, bg_id: str = None) -> str:
+    """管理后台运行的任务（如 bash 任务）。"""
+    if action == "list":
+        tasks = []
+        for bid, info in bg_manager.tasks.items():
+            tasks.append(f"- {bid} [{info['status']}]: {info['tool_name']}")
+        if not tasks:
+            return "当前无后台任务。"
+        return "\n".join(tasks)
+    elif action == "status":
+        if not bg_id: return "缺少 bg_id"
+        return f"任务状态: {bg_manager.get_status(bg_id)}"
+    elif action == "kill":
+        if not bg_id: return "缺少 bg_id"
+        success = bg_manager.kill_task(bg_id)
+        return "终止成功" if success else "终止失败(可能任务不存在或已结束)"
+    return "未知操作"
+
 # 定义供 LLM 调用的基础工具 Schema
 BASE_TOOLS = [
     {
         "type": "function",
         "function": {
             "name": "run_bash",
-            "description": "执行本地系统 cmd 或 bash 命令并获取终端输出结果。例如用来查看文件、运行脚本等。",
+            "description": "执行本地系统 cmd 或 bash 命令。注意：所有 bash 命令现在都会强制在后台异步执行，并立即返回任务 ID，执行结果会在完成后自动注入上下文。",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "command": {
                         "type": "string"
+                    },
+                    "background": {
+                        "type": "boolean",
+                        "description": "是否在后台异步执行该命令。如果预计命令执行时间较长（如服务器启动、大量文件处理），请设为 true。"
                     }
                 },
                 "required": ["command"]
@@ -1083,6 +1194,28 @@ BASE_TOOLS = [
                 }
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "manage_task",
+            "description": "管理后台任务，支持查询列表、状态或终止任务。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": ["list", "status", "kill"],
+                        "description": "操作类型"
+                    },
+                    "bg_id": {
+                        "type": "string",
+                        "description": "任务ID（list 操作时可为空）"
+                    }
+                },
+                "required": ["action"]
+            }
+        }
     }
 ]
 
@@ -1140,7 +1273,8 @@ BASE_FUNCTIONS = {
     "claim_task": task_manager.claim_task,
     "complete_task": task_manager.complete_task,
     "get_task": task_manager.get_task,
-    "list_tasks": task_manager.list_tasks
+    "list_tasks": task_manager.list_tasks,
+    "manage_task": manage_task
 }
 
 # 专门给 subagent 使用的函数集合
@@ -1373,10 +1507,16 @@ def execute_function(tool: ToolCall, available_funcs: dict, messages: list) -> s
         deny_msg = "执行失败：权限校验未完成（可能缺少交互终端），系统已按拒绝处理。"
     
     if is_allowed:
-        try:
-            result = str(func_to_call(**tool.args))
-        except Exception as e:
-            result = f"工具 {tool.name} 执行出错: {str(e)}"
+        if tool.name == "run_bash" or tool.args.get("background"):
+            bg_id = bg_manager.submit_task(tool.name, func_to_call, tool.args)
+            result = f"[Background Task {bg_id} Started] 任务已在后台异步运行，结果将在完成后自动注入上下文。"
+        else:
+            try:
+                # 过滤掉 background 参数，避免传入不支持该参数的函数
+                call_args = {k: v for k, v in tool.args.items() if k != "background"}
+                result = str(func_to_call(**call_args))
+            except Exception as e:
+                result = f"工具 {tool.name} 执行出错: {str(e)}"
     else:
         result = deny_msg
         
@@ -1437,6 +1577,11 @@ def run_subagent(instruction: str, **kwargs) -> str:
 
     final_content = ""
     for _ in range(MAX_SUBAGENT_ITERATIONS):
+        # 检查后台任务
+        notifications = bg_manager.check_completed_tasks()
+        for note in notifications:
+            messages.append({"role": "user", "content": note})
+            
         try:
             response = client.chat.completions.create(
                 model=MODEL,
@@ -1493,6 +1638,11 @@ def agent_loop(messages: list = None, latest_user_input: str = "") -> list:
 
     # 主循环：处理可能连续调用的工具流程
     while True:
+        # 检查后台任务
+        notifications = bg_manager.check_completed_tasks()
+        for note in notifications:
+            messages.append({"role": "user", "content": note})
+            
         # 在每次请求 LLM 之前，调用压缩器预处理
         if context_compressor:
             context_compressor.prepare(messages)
