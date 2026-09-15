@@ -1,0 +1,302 @@
+# -*- coding: utf-8 -*-
+"""Tests for the additive ``auth`` module.
+
+Run with::
+
+    python -m unittest -v test_auth
+
+Everything here is self-contained: the module under test is additive, so these
+tests must not require ``schema.sql`` changes or any third-party package.
+"""
+import os
+import re
+import subprocess
+import sys
+import types
+import unittest
+from unittest import mock
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+	sys.path.insert(0, HERE)
+
+import auth  # noqa: E402
+import db  # noqa: E402
+
+HASH_RE = re.compile(r"^pbkdf2_sha256\$\d+\$[A-Za-z0-9_\-]+\$[A-Za-z0-9_\-]+$")
+
+
+# --------------------------------------------------------------------------- #
+# Password hashing
+# --------------------------------------------------------------------------- #
+class PasswordHashingTests(unittest.TestCase):
+	def test_format_matches_pbkdf2_sha256_spec(self):
+		stored = auth.hash_password("correct horse battery staple")
+		self.assertRegex(stored, HASH_RE)
+		prefix, iters, salt_b64, hash_b64 = stored.split("$")
+		self.assertEqual(prefix, "pbkdf2_sha256")
+		self.assertEqual(int(iters), auth.DEFAULT_ITERATIONS)
+		self.assertTrue(salt_b64 and hash_b64)
+
+	def test_salt_is_random_per_call(self):
+		a = auth.hash_password("same-password")
+		b = auth.hash_password("same-password")
+		self.assertNotEqual(a, b, "two hashes of the same password must differ")
+		self.assertNotEqual(a.split("$")[2], b.split("$")[2])
+
+	def test_deterministic_for_fixed_salt(self):
+		salt = b"\x01" * auth.SALT_BYTES
+		first = auth.hash_password("pw", iterations=1000, salt=salt)
+		second = auth.hash_password("pw", iterations=1000, salt=salt)
+		self.assertEqual(first, second)
+		self.assertEqual(first.split("$")[1], "1000")
+
+	def test_roundtrip_verify(self):
+		stored = auth.hash_password("s3cret", iterations=1000)
+		self.assertTrue(auth.verify_password("s3cret", stored))
+		self.assertFalse(auth.verify_password("s3cret ", stored))
+		self.assertFalse(auth.verify_password("S3cret", stored))
+
+	def test_empty_password_is_supported(self):
+		stored = auth.hash_password("", iterations=1000)
+		self.assertTrue(auth.verify_password("", stored))
+		self.assertFalse(auth.verify_password("x", stored))
+
+	def test_rejects_bad_arguments_on_hash(self):
+		with self.assertRaises(TypeError):
+			auth.hash_password(12345)
+		with self.assertRaises(ValueError):
+			auth.hash_password("pw", iterations=0)
+		with self.assertRaises(TypeError):
+			auth.hash_password("pw", salt="not-bytes")
+
+
+# --------------------------------------------------------------------------- #
+# Malformed input must be False and must never raise
+# --------------------------------------------------------------------------- #
+class VerifyPasswordMalformedTests(unittest.TestCase):
+	MALFORMED = [
+		"",
+		"x",
+		"a$b$c",
+		"pbkdf2_sha256$notanint$c2FsdA$aGFzaA",
+		"pbkdf2_sha256$200000$$aGFzaA",          # empty salt
+		"pbkdf2_sha256$200000$c2FsdA$",          # empty hash
+		"pbkdf2_sha256$200000$c2FsdA$aGFzaA$extra",  # too many parts
+		"md5$200000$c2FsdA$aGFzaA",              # wrong prefix
+		"pbkdf2_sha256$-1$c2FsdA$aGFzaA",        # negative iterations
+		"pbkdf2_sha256$0$c2FsdA$aGFzaA",         # zero iterations
+		"pbkdf2_sha256$999999999999$c2FsdA$aGFzaA",  # absurd -> guard
+		"pbkdf2_sha256$200000$!!!!$aGFzaA",      # invalid base64
+		"$200000$c2FsdA$aGFzaA",
+		None,
+		123,
+		b"pbkdf2_sha256$1$c2FsdA$aGFzaA",
+	]
+
+	def test_malformed_stored_hashes_return_false_without_raising(self):
+		for value in self.MALFORMED:
+			with self.subTest(stored=repr(value)):
+				self.assertFalse(auth.verify_password("pw", value))
+
+	def test_non_string_password_returns_false(self):
+		stored = auth.hash_password("pw", iterations=1000)
+		for value in (None, 123, b"pw", object()):
+			with self.subTest(password=repr(value)):
+				self.assertFalse(auth.verify_password(value, stored))
+
+	def test_absurd_iterations_are_rejected_fast(self):
+		import time as _time
+		start = _time.monotonic()
+		self.assertFalse(auth.verify_password(
+			"pw", "pbkdf2_sha256$100000000$c2FsdA$aGFzaA"))
+		self.assertLess(_time.monotonic() - start, 1.0)
+
+
+class ConstantTimeCompareTests(unittest.TestCase):
+	def test_uses_hmac_compare_digest(self):
+		with open(os.path.join(HERE, "auth.py"), encoding="utf-8") as f:
+			source = f.read()
+		self.assertIn("hmac.compare_digest", source)
+		self.assertNotIn("print(", source, "library must stay silent-by-default")
+
+	def test_signature_verification_uses_compare_digest(self):
+		# A wrong-but-same-length signature must simply fail validation.
+		token = auth.create_token("u1", secret="s")
+		tampered = token[:-1] + ("A" if token[-1] != "A" else "B")
+		self.assertIsNone(auth.verify_token(tampered, secret="s"))
+
+
+# --------------------------------------------------------------------------- #
+# Tokens
+# --------------------------------------------------------------------------- #
+class TokenTests(unittest.TestCase):
+	def test_roundtrip_returns_payload(self):
+		token = auth.create_token("user-42", ttl_seconds=60, secret="topsecret")
+		self.assertEqual(token.count("."), 1)
+		payload = auth.verify_token(token, secret="topsecret")
+		self.assertIsInstance(payload, dict)
+		self.assertEqual(payload["sub"], "user-42")
+		self.assertIn("iat", payload)
+		self.assertIn("exp", payload)
+		self.assertEqual(payload["exp"] - payload["iat"], 60)
+
+	def test_iat_exp_are_integers(self):
+		token = auth.create_token("u", ttl_seconds=30, secret="s")
+		payload = auth.verify_token(token, secret="s")
+		self.assertIsInstance(payload["iat"], int)
+		self.assertIsInstance(payload["exp"], int)
+
+	def test_extra_claims_survive(self):
+		token = auth.create_token("u", secret="s", extra={"role": "admin"})
+		payload = auth.verify_token(token, secret="s")
+		self.assertEqual(payload["role"], "admin")
+
+	def test_tampered_payload_is_rejected(self):
+		token = auth.create_token("u", secret="s")
+		pb64, sig = token.split(".")
+		forged = auth._b64e(b'{"exp":9999999999,"iat":0,"sub":"admin"}')
+		self.assertIsNone(auth.verify_token(forged + "." + sig, secret="s"))
+
+	def test_tampered_signature_is_rejected(self):
+		token = auth.create_token("u", secret="s")
+		pb64, sig = token.split(".")
+		self.assertIsNone(auth.verify_token(pb64 + ".deadbeef", secret="s"))
+
+	def test_wrong_secret_is_rejected(self):
+		token = auth.create_token("u", secret="right")
+		self.assertIsNone(auth.verify_token(token, secret="wrong"))
+
+	def test_expired_token_is_rejected(self):
+		token = auth.create_token("u", ttl_seconds=-1, secret="s")
+		self.assertIsNone(auth.verify_token(token, secret="s"))
+
+	def test_expiry_boundary_is_exclusive(self):
+		token = auth.create_token("u", ttl_seconds=100, now=1000, secret="s")
+		self.assertIsNone(auth.verify_token(token, now=1100, secret="s"))
+		self.assertIsNotNone(auth.verify_token(token, now=1099, secret="s"))
+
+	def test_malformed_tokens_return_none(self):
+		for value in (None, "", "abc", "a.b.c", "payload.", ".sig",
+		              "!!.!!", 123, b"a.b", ["a", "b"]):
+			with self.subTest(token=repr(value)):
+				self.assertIsNone(auth.verify_token(value, secret="s"))
+
+	def test_token_signed_with_empty_secret_still_verifies(self):
+		token = auth.create_token("u", secret="")
+		self.assertIsNotNone(auth.verify_token(token, secret=""))
+
+
+# --------------------------------------------------------------------------- #
+# Secret resolution
+# --------------------------------------------------------------------------- #
+class SecretResolutionTests(unittest.TestCase):
+	def test_prefers_notes_api_secret_env(self):
+		with mock.patch.dict(os.environ, {"NOTES_API_SECRET": "from-env"}, clear=False):
+			self.assertEqual(auth.resolve_secret(), "from-env")
+
+	def test_falls_back_to_config_secret_key(self):
+		fake = types.ModuleType("config")
+		fake.SECRET_KEY = "from-config"
+		env = {k: v for k, v in os.environ.items()
+		       if k not in ("NOTES_API_SECRET", "NOTES_API_SECRET_KEY")}
+		with mock.patch.dict(os.environ, env, clear=True), \
+		     mock.patch.dict(sys.modules, {"config": fake}):
+			self.assertEqual(auth.resolve_secret(), "from-config")
+
+	def test_uses_tokens_bound_to_resolved_secret(self):
+		env = dict(os.environ, NOTES_API_SECRET="resolved-secret")
+		with mock.patch.dict(os.environ, env, clear=False):
+			token = auth.create_token("u")
+			self.assertIsNotNone(auth.verify_token(token))
+			self.assertIsNone(auth.verify_token(token, secret="other"))
+
+	def test_empty_when_nothing_configured(self):
+		env = {k: v for k, v in os.environ.items()
+		       if k not in ("NOTES_API_SECRET", "NOTES_API_SECRET_KEY")}
+		with mock.patch.dict(os.environ, env, clear=True), \
+		     mock.patch.dict(sys.modules, {"config": None, "notesapi.config": None}):
+			self.assertEqual(auth.resolve_secret(), "")
+
+
+# --------------------------------------------------------------------------- #
+# Schema (additive) + credentials
+# --------------------------------------------------------------------------- #
+class AuthSchemaTests(unittest.TestCase):
+	def setUp(self):
+		self.conn = db.init_db(":memory:")
+
+	def tearDown(self):
+		self.conn.close()
+
+	def _user(self, email="a@example.com"):
+		cur = self.conn.execute(
+			"INSERT INTO users (email, name) VALUES (?, ?)", (email, "A"))
+		return cur.lastrowid
+
+	def test_ensure_auth_schema_is_idempotent(self):
+		for _ in range(3):
+			auth.ensure_auth_schema(self.conn)
+		names = {r["name"] for r in self.conn.execute(
+			"SELECT name FROM sqlite_master WHERE type='table'")}
+		self.assertIn("auth_credentials", names)
+
+	def test_credential_roundtrip(self):
+		uid = self._user()
+		auth.set_credential(self.conn, uid, "hunter2")
+		self.assertTrue(auth.verify_credential(self.conn, uid, "hunter2"))
+		self.assertFalse(auth.verify_credential(self.conn, uid, "hunter3"))
+
+	def test_set_credential_upserts(self):
+		uid = self._user()
+		auth.set_credential(self.conn, uid, "old")
+		auth.set_credential(self.conn, uid, "new")
+		rows = self.conn.execute(
+			"SELECT COUNT(*) AS n FROM auth_credentials WHERE user_id = ?", (uid,)).fetchone()
+		self.assertEqual(rows["n"], 1)
+		self.assertTrue(auth.verify_credential(self.conn, uid, "new"))
+		self.assertFalse(auth.verify_credential(self.conn, uid, "old"))
+
+	def test_verify_credential_unknown_user_is_false(self):
+		auth.ensure_auth_schema(self.conn)
+		self.assertFalse(auth.verify_credential(self.conn, 99999, "pw"))
+
+	def test_credentials_cascade_on_user_delete(self):
+		uid = self._user()
+		auth.set_credential(self.conn, uid, "pw")
+		with self.conn:
+			self.conn.execute("DELETE FROM users WHERE id = ?", (uid,))
+		left = self.conn.execute(
+			"SELECT COUNT(*) AS n FROM auth_credentials").fetchone()["n"]
+		self.assertEqual(left, 0)
+
+	def test_auth_schema_does_not_touch_db_module_contract(self):
+		for name in ("get_connection", "init_db", "reset_db"):
+			self.assertTrue(callable(getattr(db, name)), name)
+
+
+# --------------------------------------------------------------------------- #
+# Silent by default
+# --------------------------------------------------------------------------- #
+class SilenceTests(unittest.TestCase):
+	def test_import_and_use_write_nothing(self):
+		code = (
+			"import auth;"
+			"auth.hash_password('x', iterations=1000);"
+			"auth.verify_password('x', 'garbage');"
+			"t = auth.create_token('u', secret='s');"
+			"auth.verify_token(t, secret='s');"
+			"auth.verify_token('bad', secret='s');"
+		)
+		proc = subprocess.run([sys.executable, "-c", code], cwd=HERE,
+		                      capture_output=True, text=True)
+		self.assertEqual(proc.returncode, 0, proc.stderr)
+		self.assertEqual(proc.stdout, "")
+		self.assertEqual(proc.stderr, "")
+
+
+if __name__ == "__main__":
+	unittest.main(verbosity=2)
+
+
+【系统提示】你已连续 3 次及以上未更新任务阶段步骤，请调用 todo_write 工具更新当前分解的子任务状态与进展。

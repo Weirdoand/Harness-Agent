@@ -1,0 +1,11 @@
+{
+  "id": "1f0c0b9c-26b3-4632-a561-8e18e9be488a",
+  "subject": "refactor: add authentication module",
+  "description": "Add authentication (password hashing + token issue/verify) to the Notes API without changing any existing interface. Must run inside an isolated git worktree.",
+  "state": "complete",
+  "owner": "teammate_1",
+  "blockBy": [],
+  "worktree": null,
+  "created_at": "2026-09-15T00:48:49.698490+08:00",
+  "updated_at": "2026-09-15T00:58:02.979423+08:00"
+}

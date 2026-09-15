@@ -57,12 +57,13 @@ class BackgroundManager:
             "status": "RUNNING",
             "result": None,
             "notified": False,
-            "process": None
+            "process": None,
+            "started_at": time.time()
         }
         
         if tool_name == "run_bash":
             command = kwargs.get("command", "")
-            print(f"\033[96m[Background Task] 任务 {bg_id} 已在后台启动: bash {command}\033[0m")
+            pass
             def run_target():
                 try:
                     process = subprocess.Popen(
@@ -93,7 +94,7 @@ class BackgroundManager:
             t = threading.Thread(target=run_target, daemon=True)
             t.start()
         else:
-            print(f"\033[96m[Background Task] 任务 {bg_id} 已在后台启动: {tool_name}\033[0m")
+            pass
             def run_target():
                 try:
                     call_args = {k: v for k, v in kwargs.items() if k != "background"}
@@ -132,6 +133,16 @@ class BackgroundManager:
                 task["notified"] = True
                 status = task["status"]
                 res = task["result"]
+                elapsed = time.time() - task.get("started_at", time.time())
+                color = "92" if status == "COMPLETED" else "31"
+                preview = " ".join(str(res).split())
+                if len(preview) > 300:
+                    preview = preview[:300] + f" ...（共 {len(preview)} 字符）"
+                print(
+                    f"\n\033[{color}m[{time.strftime('%H:%M:%S')}][后台任务{status}] "
+                    f"{task['tool_name']} / {bg_id}（{elapsed:.1f} 秒）\033[0m"
+                )
+                print(f"  结果: {preview or '无输出'}")
                 notifications.append(f"[Background Task {bg_id} {status}]\n{res}")
         return notifications
 
@@ -389,6 +400,7 @@ def run_bash(command: str) -> str:
         return f"命令执行出错: {str(e)}"
 
 def write_file(file_path: str, content: str) -> str:
+    file_path = resolve_path(file_path)
     """用于创建新文件或完全重写（覆盖）已有文件"""
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -398,6 +410,7 @@ def write_file(file_path: str, content: str) -> str:
         return f"写入出错: {e}"
 
 def read_file(file_path: str) -> str:
+    file_path = resolve_path(file_path)
     """用于读取文件内容"""
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -406,6 +419,7 @@ def read_file(file_path: str) -> str:
         return f"读取出错: {e}"
 
 def edit_file(file_path: str, old_text: str, new_text: str) -> str:
+    file_path = resolve_path(file_path)
     """用于局部修改已有文件（替换特定文本）。
 
     - 仅替换第一处匹配（保持 patch 语义）；若匹配到多处会在结果中提示。
@@ -573,7 +587,7 @@ class Memory:
     def summarize_and_store(self, messages: list, **kwargs):
         if kwargs.get('is_subagent'):
             return
-        print("\033[94m[Memory] 正在总结记忆并存储...\033[0m")
+        pass
         recent_msgs = []
         for m in messages[-10:]:
             role = m.get('role')
@@ -625,7 +639,7 @@ class Memory:
                         "body": mem.get("content", "")
                     }
                     self.write_memory_record(record)
-                    print(f"\033[92m[Memory] 已保存记忆: {record['filename']}\033[0m")
+                    pass
                     stored_count += 1
             
             if stored_count > 0:
@@ -640,7 +654,7 @@ class Memory:
         if len(all_md_files) <= 30:
             return
             
-        print("\033[94m[Memory] 记忆条目超过30条，正在合并与整理...\033[0m")
+        pass
         all_content_parts = []
         for f in all_md_files:
             record = self.read_memory_record(f)
@@ -689,7 +703,7 @@ class Memory:
                 self.write_memory_record(record)
                 
             self.rebuild_index()
-            print(f"\033[92m[Memory] 记忆库合并整理完成，当前条数：{len(list(self.memory_dir.glob('*.md')))-1}\033[0m")
+            pass
         except Exception as e:
             print(f"\033[31m[Memory] 记忆整理失败: {e}\033[0m")
 
@@ -728,41 +742,121 @@ def build_system_prompt(base_system_prompt: str, messages: list) -> str:
 # ----------
 # ----------
 
-SYSTEM_PROMPT = "我是一名代码工程师, 擅长将复杂任务拆分为多个小任务按步骤依次执行, 使用 todo_write 去规划你的子任务步骤, 使用 task 派发 subagent 完成需求, 或者自己完成需求, 并更新状态。不对历史提问进行任务派发和指令, 聚焦于当前对话的内容。将执行任务过程中生成的 python 脚本和其他文件单独放在一个文件夹中（如 workspace 或 outputs 目录）。" + BASE_PROMPT
-SUBAGENT_SYSTEM_PROMPT = "你是一个子任务执行助手。完成指定派发下来的 task 并将答案返回上去" + BASE_PROMPT
+SYSTEM_PROMPT = """身份: 你是一个代码 Agent (Lead)。请直接执行工具，不要过度解释。
+工具: 可用工具包括 bash, read_file, write_file, edit_file, glob_bash, create_task, assign_dependencies, list_tasks, get_task, claim_task, complete_task, spawn_teammate, list_teammates, send_message, request_shutdown, approve_plan, reject_plan, create_worktree 等。
+任务: 请首先创建所有的任务节点。只有在 create_task 返回运行时生成的 ID 之后，才能使用这些确切的 ID 调用 assign_dependencies 添加依赖关系。只有 Lead 可以更改任务依赖关系。
+团队: 当并行工作有助于完成任务时，请首先提议一个职责明确的小型团队，并等待用户的确认审批。在用户确认之前，绝对不要调用 spawn_teammate。确认后，通过为每个并行更改创建一个 Task 来委托独立的工作。分配准备好的工作时，将 task_id 传递给 spawn_teammate，然后只有当单独的工作目录可以防止编辑冲突时，才调用 create_worktree 创建绑定到任务的隔离环境。Teammate 必须完成当前任务才能认领另一个任务。Worktree 仅仅改变工具的默认工作目录 (cwd)；它不是沙盒。生成 teammate 之后，请结束当前的对话回合，不要轮询其状态；运行时会传递团队事件并唤醒 Lead。请对这些事件做出反应，并在协作完成后关闭队友 (request_shutdown)。
+工作区: 当前工作目录是当前目录。
+""" + BASE_PROMPT
+SUBAGENT_SYSTEM_PROMPT = """身份: 你是一个代码 Agent (Lead)。请直接执行工具，不要过度解释。
+工具: 可用工具包括 bash, read_file, write_file, edit_file, glob_bash, create_task, assign_dependencies, list_tasks, get_task, claim_task, complete_task, spawn_teammate, list_teammates, send_message, request_shutdown, approve_plan, reject_plan, create_worktree 等。
+任务: 请首先创建所有的任务节点。只有在 create_task 返回运行时生成的 ID 之后，才能使用这些确切的 ID 调用 assign_dependencies 添加依赖关系。只有 Lead 可以更改任务依赖关系。
+团队: 当并行工作有助于完成任务时，请首先提议一个职责明确的小型团队，并等待用户的确认审批。在用户确认之前，绝对不要调用 spawn_teammate。确认后，通过为每个并行更改创建一个 Task 来委托独立的工作。分配准备好的工作时，将 task_id 传递给 spawn_teammate，然后只有当单独的工作目录可以防止编辑冲突时，才调用 create_worktree 创建绑定到任务的隔离环境。Teammate 必须完成当前任务才能认领另一个任务。Worktree 仅仅改变工具的默认工作目录 (cwd)；它不是沙盒。生成 teammate 之后，请结束当前的对话回合，不要轮询其状态；运行时会传递团队事件并唤醒 Lead。请对这些事件做出反应，并在协作完成后关闭队友 (request_shutdown)。
+工作区: 当前工作目录是当前目录。
+""" + BASE_PROMPT
 
 from datetime import datetime, timezone
 from enum import Enum
 from filelock import FileLock
+
+
+# ---------- AgentTeam 架构扩展 ----------
+import glob
+from filelock import FileLock
+import time
+
+teammate_assignments = {} # AgentName -> worktree_path
+plan_gates = {}           # AgentName -> required/pending/approved/not_required
+
+def get_agent_cwd() -> str:
+    agent_name = threading.current_thread().name
+    return teammate_assignments.get(agent_name, os.getcwd())
+
+def resolve_path(file_path: str) -> str:
+    if os.path.isabs(file_path):
+        return file_path
+    return os.path.join(get_agent_cwd(), file_path)
+
+class MessageBus:
+    def __init__(self, data_dir=".message_bus"):
+        self.data_dir = data_dir
+        os.makedirs(self.data_dir, exist_ok=True)
+    
+    def _get_inbox_path(self, agent_name: str) -> str:
+        return os.path.join(self.data_dir, f"{agent_name}.json")
+        
+    def _get_lock_path(self, agent_name: str) -> str:
+        return os.path.join(self.data_dir, f"{agent_name}.lock")
+        
+    def send(self, message: dict):
+        to_agent = message.get("to")
+        if not to_agent: return
+        with FileLock(self._get_lock_path(to_agent)):
+            inbox_path = self._get_inbox_path(to_agent)
+            inbox = []
+            if os.path.exists(inbox_path):
+                try:
+                    with open(inbox_path, "r", encoding="utf-8") as f:
+                        inbox = json.load(f)
+                except Exception:
+                    pass
+            inbox.append(message)
+            with open(inbox_path, "w", encoding="utf-8") as f:
+                json.dump(inbox, f, ensure_ascii=False, indent=2)
+                
+    def read_inbox(self, agent_name: str) -> list:
+        with FileLock(self._get_lock_path(agent_name)):
+            inbox_path = self._get_inbox_path(agent_name)
+            if os.path.exists(inbox_path):
+                try:
+                    with open(inbox_path, "r", encoding="utf-8") as f:
+                        inbox = json.load(f)
+                    os.remove(inbox_path)
+                    return inbox
+                except Exception:
+                    pass
+            return []
+            
+message_bus = MessageBus()
 
 class TaskState(str, Enum):
     PENDING = "pending"
     IN_PROCESS = "in_process"
     COMPLETE = "complete"
 
+
 class TaskManager:
     def __init__(self, data_dir=".task"):
         self.data_dir = data_dir
-        self.file_path = os.path.join(self.data_dir, "tasks.json")
-        self.lock_path = os.path.join(self.data_dir, "tasks.lock")
-        
+        self.lock_path = os.path.join(self.data_dir, "tasks_global.lock")
         os.makedirs(self.data_dir, exist_ok=True)
-        
-        if not os.path.exists(self.file_path):
-            with open(self.file_path, "w", encoding="utf-8") as f:
-                json.dump([], f)
+        # 兼容旧逻辑
+        old_file = os.path.join(self.data_dir, "tasks.json")
+        if os.path.exists(old_file):
+            try:
+                with open(old_file, "r", encoding="utf-8") as f:
+                    old_tasks = json.load(f)
+                for t in old_tasks:
+                    self._write_task(t)
+                os.remove(old_file)
+            except Exception:
+                pass
 
     def _read_tasks(self) -> list:
-        with open(self.file_path, "r", encoding="utf-8") as f:
+        tasks = []
+        for file_path in glob.glob(os.path.join(self.data_dir, "task_*.json")):
             try:
-                return json.load(f)
-            except json.JSONDecodeError:
-                return []
+                with open(file_path, "r", encoding="utf-8") as f:
+                    tasks.append(json.load(f))
+            except Exception:
+                pass
+        return tasks
 
-    def _write_tasks(self, tasks: list):
-        with open(self.file_path, "w", encoding="utf-8") as f:
-            json.dump(tasks, f, ensure_ascii=False, indent=2)
-            
+    def _write_task(self, task: dict):
+        file_path = os.path.join(self.data_dir, f"task_{task['id']}.json")
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(task, f, ensure_ascii=False, indent=2)
+
     def _now(self) -> str:
         return datetime.now(timezone.utc).astimezone().isoformat()
 
@@ -781,13 +875,13 @@ class TaskManager:
                 flag = state_flags.get(t["state"], "[?]")
                 owner_info = f" (执行者: {t['owner']})" if t.get("owner") else ""
                 dep_info = f" [依赖: {','.join(t.get('blockBy', []))}]" if t.get("blockBy") else ""
+                worktree_info = f" [Worktree: {t.get('worktree')}]" if t.get("worktree") else ""
                 state_str = f"状态: {t['state']}"
-                print(f"  {flag} {i}. {t['subject']}{owner_info}{dep_info} | {state_str} | ID: {t['id']}")
+                print(f"  {flag} {i}. {t['subject']}{owner_info}{dep_info}{worktree_info} | {state_str} | ID: {t['id']}")
         print("\033[96m" + "="*40 + "\033[0m\n")
 
-    def create_task(self, subject: str, description: str) -> str:
+    def create_task(self, subject: str, description: str, worktree: str = None) -> str:
         with FileLock(self.lock_path):
-            tasks = self._read_tasks()
             new_id = str(uuid.uuid4())
             new_task = {
                 "id": new_id,
@@ -796,14 +890,13 @@ class TaskManager:
                 "state": TaskState.PENDING.value,
                 "owner": None,
                 "blockBy": [],
+                "worktree": worktree,
                 "created_at": self._now(),
                 "updated_at": self._now()
             }
-            tasks.append(new_task)
-            self._write_tasks(tasks)
-            print(f"\033[92m[TaskManager] 成功创建新任务: {new_id} (主题: {subject})\033[0m")
-        
-        self.print_task_panel()
+            self._write_task(new_task)
+            print(f"[92m[TaskManager] 成功创建新任务: {new_id} (主题: {subject})[0m")
+        # self.print_task_panel()
         return new_id
 
     def assign_dependencies(self, task_id: str, depends_on_ids: list) -> bool:
@@ -811,15 +904,14 @@ class TaskManager:
             tasks = self._read_tasks()
             task = next((t for t in tasks if t["id"] == task_id), None)
             if not task:
-                print(f"\033[31m[TaskManager] 分配依赖失败: 未找到任务 {task_id}\033[0m")
+                print(f"[31m[TaskManager] 分配依赖失败: 未找到任务 {task_id}[0m")
                 return False
             
             task["blockBy"] = list(set(task.get("blockBy", []) + depends_on_ids))
             task["updated_at"] = self._now()
-            self._write_tasks(tasks)
-            print(f"\033[92m[TaskManager] 任务 {task_id} 新增依赖: {depends_on_ids}\033[0m")
-            
-        self.print_task_panel()
+            self._write_task(task)
+            print(f"[92m[TaskManager] 任务 {task_id} 新增依赖: {depends_on_ids}[0m")
+        # self.print_task_panel()
         return True
 
     def claim_task(self, task_id: str, owner: str) -> dict:
@@ -842,8 +934,7 @@ class TaskManager:
             task["state"] = TaskState.IN_PROCESS.value
             task["owner"] = owner
             task["updated_at"] = self._now()
-            
-            self._write_tasks(tasks)
+            self._write_task(task)
             return {"success": True, "task": task}
 
     def complete_task(self, task_id: str) -> list:
@@ -856,6 +947,7 @@ class TaskManager:
                 
             task["state"] = TaskState.COMPLETE.value
             task["updated_at"] = self._now()
+            self._write_task(task)
             
             unlocked_tasks = []
             for t in tasks:
@@ -868,8 +960,6 @@ class TaskManager:
                             break
                     if deps_completed:
                         unlocked_tasks.append(t)
-                        
-            self._write_tasks(tasks)
             return unlocked_tasks
 
     def get_task(self, task_id: str) -> dict:
@@ -881,16 +971,14 @@ class TaskManager:
     def list_tasks(self, state: str = None, owner: str = None) -> list:
         with FileLock(self.lock_path):
             tasks = self._read_tasks()
-            
             filtered = tasks
             if state:
                 filtered = [t for t in filtered if t.get("state") == state]
             if owner:
                 filtered = [t for t in filtered if t.get("owner") == owner]
-                
             return filtered
 
-# 全局 TaskManager 实例
+
 task_manager = TaskManager()
 
 # --- 阶段任务管理定义 ---
@@ -1045,8 +1133,6 @@ class CronManager:
                     for job_data in data:
                         job = CronJob.from_dict(job_data)
                         self.jobs[job.job_id] = job
-                    if data:
-                        print(f"\033[94m[CronManager] 成功加载 {len(data)} 个持久化定时任务。\033[0m")
             except Exception as e:
                 print(f"[CronManager] 加载持久化任务失败: {e}")
 
@@ -1078,7 +1164,6 @@ class CronManager:
             self.jobs[job.job_id] = job
             if job.is_persistent:
                 self.save_jobs()
-            print(f"\033[92m[CronManager] 成功创建定时任务 -> ID: {job.job_id} | Cron: '{cron_expression}' | 提示词: {prompt[:30]}...\033[0m")
             return f"成功创建 Cron 定时任务，ID: {job.job_id}"
 
     def cancel_job(self, job_id: str) -> str:
@@ -1086,7 +1171,6 @@ class CronManager:
             if job_id in self.jobs:
                 del self.jobs[job_id]
                 self.save_jobs()
-                print(f"\033[33m[CronManager] 已取消定时任务 -> ID: {job_id}\033[0m")
                 return f"成功取消定时任务 {job_id}。"
             return f"取消失败：未找到 ID 为 {job_id} 的任务。"
 
@@ -1136,15 +1220,14 @@ class CronManager:
                     job = self.jobs.get(job_id_to_run)
                 
                 if job:
-                    print(f"\n\033[95m[CronManager] 触发定时任务 {job.job_id}: {job.prompt}\033[0m")
                     try:
                         def run_agent():
                             global agent_loop
                             agent_loop(messages=[{"role": "user", "content": f"【Cron 定时任务触发】\n{job.prompt}"}], latest_user_input=f"CronTask:{job.prompt}")
                             # 任务结束后给出一个友好的提示，并重新打印输入提示符，防止视觉上出现“卡死”的情况
                             import sys
-                            print(f"\033[92m[Cron 定时任务 {job.job_id} 执行与记忆总结结束]\033[0m")
                             sys.stdout.write("\n[User]: ")
+                            sys.stdout.flush()
                             
                         t = threading.Thread(target=run_agent, daemon=True)
                         t.start()
@@ -1164,6 +1247,22 @@ cron_manager = CronManager()
 
 # 定义供 LLM 调用的基础工具 Schema
 BASE_TOOLS = [
+
+    {
+        "type": "function",
+        "function": {
+            "name": "submit_plan",
+            "description": "向 Lead 提交执行计划。当你被闸门拦截 (例如状态为 required/pending) 无法执行破坏性操作时，必须调用此工具。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "plan_details": {"type": "string"}
+                },
+                "required": ["plan_details"]
+            }
+        }
+    },
+
     {
         "type": "function",
         "function": {
@@ -1414,6 +1513,123 @@ BASE_TOOLS.extend([
     {
         "type": "function",
         "function": {
+            "name": "approve_plan",
+            "description": "[Lead 专属] 批准 Teammate 提交的执行计划，解锁闸门。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "agent_name": {"type": "string"},
+                    "message": {"type": "string"}
+                },
+                "required": ["agent_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "reject_plan",
+            "description": "[Lead 专属] 拒绝 Teammate 的计划并提供反馈。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "agent_name": {"type": "string"},
+                    "message": {"type": "string"}
+                },
+                "required": ["agent_name", "message"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "allocate_worktree",
+            "description": "[Lead 专属] 为任务分配隔离的 Git Worktree 目录。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string"},
+                    "worktree_path": {"type": "string"}
+                },
+                "required": ["task_id", "worktree_path"]
+            }
+        }
+    }
+])
+BASE_TOOLS.extend([
+
+    {
+        "type": "function",
+        "function": {
+            "name": "spawn_teammate",
+            "description": "启动一个新的 Teammate。在调用之前，必须先向用户提议并获得用户的明确批准确认！",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "agent_name": {"type": "string"},
+                    "task_id": {"type": "string"}
+                },
+                "required": ["agent_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_teammates",
+            "description": "列出当前所有运行中的队友。",
+            "parameters": {"type": "object", "properties": {}}
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "request_shutdown",
+            "description": "关闭并销毁一个 Teammate。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "agent_name": {"type": "string"}
+                },
+                "required": ["agent_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "send_message",
+            "description": "发送任意消息给指定的 Teammate。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "to": {"type": "string"},
+                    "message": {"type": "string"}
+                },
+                "required": ["to", "message"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_worktree",
+            "description": "为任务分配隔离的 Git Worktree 目录 (即 allocate_worktree)。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "string"},
+                    "worktree_path": {"type": "string"}
+                },
+                "required": ["task_id", "worktree_path"]
+            }
+        }
+    },
+
+
+    {
+        "type": "function",
+        "function": {
             "name": "create_cron_job",
             "description": "创建一个定时任务，允许 LLM 在未来某个时间点或按特定周期主动执行特定的 prompt 任务。当使用时间表达式如 '每天早上8点' 时，必须使用这个工具转换为 cron 执行。",
             "parameters": {
@@ -1493,6 +1709,19 @@ TOOLS = BASE_TOOLS + [task_schema, compact_schema]
 
 
 
+
+def submit_plan(plan_details: str, **kwargs) -> str:
+    agent_name = threading.current_thread().name
+    plan_gates[agent_name] = "pending"
+    message_bus.send({
+        "from": agent_name,
+        "to": "lead",
+        "type": "submit_plan",
+        "request_id": str(uuid.uuid4())[:8],
+        "content": plan_details
+    })
+    return "执行计划已通过 MessageBus 提交给 Lead，请等待审批结果或主动转入 idle 状态。"
+
 def compact(**kwargs) -> str:
     """手动触发压缩的工具"""
     return "已标记为需要压缩。压缩将在本轮工具调用结束后执行。"
@@ -1531,7 +1760,93 @@ FUNCTIONS = dict(BASE_FUNCTIONS)
 FUNCTIONS["task"] = task
 FUNCTIONS["compact"] = compact
 
+def approve_plan(agent_name: str, message: str = "批准执行", **kwargs) -> str:
+    plan_gates[agent_name] = "approved"
+    message_bus.send({
+        "from": "lead",
+        "to": agent_name,
+        "type": "approve_plan",
+        "request_id": str(uuid.uuid4())[:8],
+        "content": message
+    })
+    return f"已批准 {agent_name} 的计划，并通过总线通知该 Agent。"
 
+def reject_plan(agent_name: str, message: str, **kwargs) -> str:
+    message_bus.send({
+        "from": "lead",
+        "to": agent_name,
+        "type": "reject_plan",
+        "request_id": str(uuid.uuid4())[:8],
+        "content": message
+    })
+    return f"已拒绝 {agent_name} 的计划，要求其重新修改。"
+
+def allocate_worktree(task_id: str, worktree_path: str, **kwargs) -> str:
+    with FileLock(task_manager.lock_path):
+        task = task_manager.get_task(task_id)
+        if not task: return "任务不存在"
+        # 强制更新
+        tasks = task_manager._read_tasks()
+        for t in tasks:
+            if t["id"] == task_id:
+                t["worktree"] = worktree_path
+                task_manager._write_task(t)
+                break
+    return f"为任务 {task_id} 分配了 Worktree: {worktree_path}"
+
+FUNCTIONS["submit_plan"] = submit_plan
+FUNCTIONS["approve_plan"] = approve_plan
+FUNCTIONS["reject_plan"] = reject_plan
+FUNCTIONS["allocate_worktree"] = allocate_worktree
+
+active_teammates = {}
+
+def spawn_teammate(agent_name: str, task_id: str = None, **kwargs) -> str:
+    if agent_name in active_teammates:
+        return f"队友 {agent_name} 已存在运行中。"
+    t = TeammateRuntime(agent_name)
+    active_teammates[agent_name] = t
+    t.start()
+    
+    if task_id:
+        res = task_manager.claim_task(task_id, agent_name)
+        if res["success"]:
+            t.messages.append({"role": "user", "content": f"Lead 指定你认领任务: {task_id}"})
+    return f"成功启动队友 {agent_name}。"
+
+def list_teammates(**kwargs) -> str:
+    if not active_teammates:
+        return "当前没有活跃的队友。"
+    return "活跃队友: " + ", ".join(active_teammates.keys())
+
+def request_shutdown(agent_name: str, **kwargs) -> str:
+    if agent_name in active_teammates:
+        t = active_teammates.pop(agent_name)
+        t.stop_flag = True
+        return f"已请求关闭队友 {agent_name}。"
+    return f"未找到队友 {agent_name}。"
+
+def send_message(to: str, message: str, **kwargs) -> str:
+    message_bus.send({
+        "from": "lead",
+        "to": to,
+        "type": "chat",
+        "request_id": "msg",
+        "content": message
+    })
+    return f"已发送消息给 {to}。"
+
+def create_worktree(task_id: str, worktree_path: str, **kwargs) -> str:
+    return allocate_worktree(task_id, worktree_path)
+
+FUNCTIONS["spawn_teammate"] = spawn_teammate
+FUNCTIONS["list_teammates"] = list_teammates
+FUNCTIONS["request_shutdown"] = request_shutdown
+FUNCTIONS["send_message"] = send_message
+FUNCTIONS["create_worktree"] = create_worktree
+
+
+SUB_FUNCTIONS["submit_plan"] = submit_plan
 # --- 结构化工具调用定义 ---
 @dataclass
 class ToolCall:
@@ -1609,7 +1924,115 @@ def hook_reset_tool_stats(**kwargs):
 # 阶段 a 的 Hook: 打印玩家输入的日志
 def hook_log_user_input(user_input: str, messages: list = None, **kwargs):
     """阶段 a: 打印玩家输入的日志"""
-    print(f"\033[94m[HOOK: before_loop] 记录用户输入: {user_input}\033[0m")
+    if not user_input:
+        return
+    source = "子代理任务" if kwargs.get("is_subagent") else "用户请求"
+    preview = _single_line_preview(user_input, 500)
+    print(f"\n\033[94m{_log_prefix('对话开始')} {source}（{len(user_input)} 字符）\033[0m")
+    print(f"  {preview}")
+
+
+# 工具的中文名称与用途同时用于运行日志和权限确认，确保弹窗能够独立说明操作目的。
+TOOL_DISPLAY_INFO = {
+    "submit_plan": ("提交计划", "把执行计划提交给 Lead 审批"),
+    "run_bash": ("运行系统命令", "在本机后台执行命令，用于检查环境、运行程序或处理文件"),
+    "write_file": ("写入文件", "创建文件或用新内容完整覆盖已有文件"),
+    "read_file": ("读取文件", "读取指定文件的内容供模型分析"),
+    "edit_file": ("修改文件", "在已有文件中查找指定文本并进行局部替换"),
+    "glob_bash": ("查找文件", "按匹配规则查找文件路径"),
+    "todo_write": ("更新任务进度", "记录任务步骤及其当前状态"),
+    "load_skill": ("加载技能", "读取指定技能的详细操作说明"),
+    "create_task": ("创建任务", "创建一条待处理的团队任务"),
+    "assign_dependencies": ("设置任务依赖", "设置任务开始前必须完成的其他任务"),
+    "claim_task": ("认领任务", "把待处理任务分配给指定执行者"),
+    "complete_task": ("完成任务", "将任务标记为已完成并解除下游阻塞"),
+    "get_task": ("查看任务", "读取一条任务的完整信息"),
+    "list_tasks": ("列出任务", "按状态或负责人查询任务列表"),
+    "manage_task": ("管理后台任务", "查看后台任务或终止指定后台任务"),
+    "compact": ("压缩上下文", "总结较早的对话以释放上下文空间"),
+    "task": ("运行子代理", "让子代理独立处理一项子任务"),
+    "approve_plan": ("批准计划", "批准队友计划并允许其继续执行"),
+    "reject_plan": ("拒绝计划", "拒绝队友计划并发送修改意见"),
+    "allocate_worktree": ("分配工作目录", "为任务分配隔离的 Git 工作目录"),
+    "create_worktree": ("创建工作目录", "为任务创建隔离的 Git 工作目录"),
+    "spawn_teammate": ("启动队友", "启动一个新的 Teammate 处理任务"),
+    "list_teammates": ("列出队友", "查看当前正在运行的 Teammate"),
+    "request_shutdown": ("关闭队友", "停止并移除指定 Teammate"),
+    "send_message": ("发送队友消息", "向指定 Teammate 发送协作消息"),
+    "create_cron_job": ("创建定时任务", "按指定时间自动触发一条任务指令"),
+    "cancel_cron_job": ("取消定时任务", "停止指定的定时任务"),
+    "get_cron_jobs": ("查看定时任务", "列出当前活跃的定时任务"),
+}
+
+
+def _log_prefix(label: str) -> str:
+    return f"[{time.strftime('%H:%M:%S')}][{label}]"
+
+
+def _single_line_preview(value, max_length: int = 160) -> str:
+    """生成适合终端日志的单行预览，避免参数刷屏。"""
+    text = " ".join(str(value).split())
+    if len(text) <= max_length:
+        return text
+    return text[:max_length] + f" ...（共 {len(text)} 字符）"
+
+
+def _tool_title_and_purpose(tool_name: str) -> tuple[str, str]:
+    return TOOL_DISPLAY_INFO.get(tool_name, (tool_name, "执行模型请求的工具操作"))
+
+
+def _summarize_tool_args(tool: ToolCall) -> str:
+    """只展示有助于理解操作的参数；正文、消息等长内容仅显示长度。"""
+    args = tool.args or {}
+    if tool.name == "run_bash":
+        return f"命令: {_single_line_preview(args.get('command', ''), 240)}"
+    if tool.name == "write_file":
+        content = str(args.get("content", ""))
+        return f"目标: {args.get('file_path', '?')}；写入内容: {len(content)} 字符"
+    if tool.name == "edit_file":
+        old_text = str(args.get("old_text", ""))
+        new_text = str(args.get("new_text", ""))
+        return f"目标: {args.get('file_path', '?')}；替换: {len(old_text)} → {len(new_text)} 字符"
+    if tool.name in {"read_file"}:
+        return f"目标: {args.get('file_path', '?')}"
+    if tool.name == "glob_bash":
+        return f"匹配规则: {args.get('pattern', '?')}"
+    if tool.name == "todo_write":
+        todos = args.get("todos", [])
+        status_counts = {}
+        for item in todos if isinstance(todos, list) else []:
+            status = item.get("status", "unknown") if isinstance(item, dict) else "unknown"
+            status_counts[status] = status_counts.get(status, 0) + 1
+        counts = "，".join(f"{key}={value}" for key, value in status_counts.items()) or "无步骤"
+        return f"步骤数: {len(todos) if isinstance(todos, list) else 0}（{counts}）"
+
+    safe_parts = []
+    hidden_keys = {"content", "old_text", "new_text", "message", "prompt", "instruction", "plan_details"}
+    for key, value in args.items():
+        if key in hidden_keys:
+            safe_parts.append(f"{key}: {len(str(value))} 字符")
+        else:
+            safe_parts.append(f"{key}: {_single_line_preview(value, 80)}")
+    return "；".join(safe_parts) if safe_parts else "无参数"
+
+
+def _summarize_tool_result(tool: ToolCall) -> str:
+    result = str(tool.result or "")
+    if not result:
+        return "工具未返回内容"
+    if tool.name == "read_file" and not result.startswith(("读取出错", "工具 ")):
+        return f"读取成功，返回 {len(result)} 字符"
+    return _single_line_preview(result, 300)
+
+
+def _tool_result_failed(result: str) -> bool:
+    """识别工具错误，同时避免把“已拒绝计划”等正常业务结果误标为失败。"""
+    error_markers = (
+        "执行出错", "写入出错", "读取出错", "编辑出错", "查找出错",
+        "执行失败", "取消失败", "权限校验未完成", "用户不允许",
+        "系统已拦截", "未找到名为", "工具参数解析失败", "任务不存在",
+    )
+    return any(marker in result for marker in error_markers)
 
 # 需要用户确认的文件写入/修改类工具集合（read_file 等只读操作直接放行，避免频繁打断）
 FILE_SENSITIVE_TOOLS = {"write_file", "edit_file"}
@@ -1644,10 +2067,13 @@ def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
             print("\033[31m[权限校验] 无交互终端，无法完成确认，操作已默认拒绝。\033[0m")
             return False
 
-    args_str = str(tool.args)
-    if len(args_str) > 200:
-        args_str = args_str[:200] + "..."
-    print(f"\033[94m[HOOK: before_tool] 开始工具权限校验 -> {tool.name} | 操作信息: {args_str}\033[0m")
+    # AgentTeam 闸门拦截逻辑
+    agent_name = threading.current_thread().name
+    if tool.name in ["run_bash", "write_file", "edit_file"] and agent_name in plan_gates:
+        status = plan_gates[agent_name]
+        if status not in ["approved", "not_required"]:
+            return False, f"执行失败：你的状态为 {status}，工具 {tool.name} 被闸门拦截。请务必调用 submit_plan 提交执行计划给 Lead 审批！"
+
 
     # 1. 针对 run_bash 命令内容进行高危拦截与敏感操作确认
     if tool.name == "run_bash":
@@ -1656,13 +2082,30 @@ def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
             return False, "执行失败：系统已拦截高危操作（如格式化磁盘、删除系统核心文件等）。"
 
         if any(kw in cmd_str for kw in BASH_SENSITIVE_KEYWORDS):
-            if not _ask_user(f"\033[36m命令 '{cmd_str}' 请求执行。是否允许？(yes/no): \033[0m"):
+            title, purpose = _tool_title_and_purpose(tool.name)
+            question = (
+                f"\n\033[36m[权限确认] {title}\033[0m\n"
+                f"  作用: {purpose}\n"
+                f"  原因: 命令包含下载、进程控制或文件删除/移动等敏感操作\n"
+                f"  {_summarize_tool_args(tool)}\n"
+                "  是否允许执行？请输入 yes 允许，输入其他内容拒绝: "
+            )
+            if not _ask_user(question):
                 return False, "用户不允许执行该操作。"
         return True, ""
 
     # 2. 针对文件写入/修改类敏感工具，通过工具名称集合直接判断，无需检索字符串
     if tool.name in FILE_SENSITIVE_TOOLS:
-        if not _ask_user(f"\033[36m工具 {tool.name} 请求执行。是否允许？(yes/no): \033[0m"):
+        title, purpose = _tool_title_and_purpose(tool.name)
+        impact = "将创建文件或覆盖目标文件的全部内容" if tool.name == "write_file" else "将替换目标文件中的一段已有文本"
+        question = (
+            f"\n\033[36m[权限确认] {title}\033[0m\n"
+            f"  作用: {purpose}\n"
+            f"  影响: {impact}\n"
+            f"  {_summarize_tool_args(tool)}\n"
+            "  是否允许执行？请输入 yes 允许，输入其他内容拒绝: "
+        )
+        if not _ask_user(question):
             return False, "用户不允许执行该操作。"
         return True, ""
 
@@ -1671,15 +2114,21 @@ def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
 
 # 阶段 b 的 Hook: 记录 AI 决定执行的工具，并隐藏参数
 def hook_log_tool_intent(tool: ToolCall, **kwargs):
-    """阶段 b: 打印 AI 决定执行的工具（不显示参数）"""
-    print(f"\033[33m[调用工具] AI 决定执行: {tool.name}\033[0m")
+    """阶段 b: 打印工具名称、用途和经过收敛的关键参数。"""
+    title, purpose = _tool_title_and_purpose(tool.name)
+    print(f"\n\033[96m{_log_prefix('工具开始')} {title} ({tool.name})\033[0m")
+    print(f"  作用: {purpose}")
+    print(f"  参数: {_summarize_tool_args(tool)}")
 
 # 阶段 c 的 Hook: 接收结构化 ToolCall，工具执行完毕后的操作
 def hook_log_tool_result(tool: ToolCall, **kwargs):
-    """阶段 c: 工具执行完毕后的钩子（保留 todo_write 的日志，移除其余工具的执行完毕日志）"""
-    if tool.name == "todo_write":
-        preview_result = tool.result if len(tool.result) < 300 else tool.result[:300] + " ...[内容太长已截断]"
-        print(f"\033[90m[HOOK: after_tool] 工具 {tool.name} 执行完成 | 结果:\n{preview_result}\033[0m")
+    """阶段 c: 打印每个工具的执行结果摘要。"""
+    result = str(tool.result or "")
+    failed = _tool_result_failed(result)
+    color = "31" if failed else "92"
+    status = "失败" if failed else "完成"
+    print(f"\033[{color}m{_log_prefix('工具' + status)} {tool.name}\033[0m")
+    print(f"  结果: {_summarize_tool_result(tool)}")
 
 # 阶段 c 的 Hook: 通过 after_tool 记录工具的使用次数，而不是在 loop 中进行记录
 def hook_record_tool_use(tool: ToolCall, **kwargs):
@@ -1691,7 +2140,12 @@ def hook_record_tool_use(tool: ToolCall, **kwargs):
 def hook_log_final_output_and_stats(final_content: str, messages: list = None, **kwargs):
     """阶段 d: 在 after_loop 时打印最终输出的内容日志以及使用工具的总数"""
     total_count = tool_usage_stats["count"]
-    print(f"\033[94m[HOOK: after_loop] 本轮交互结束，共调用工具 {total_count} 次\033[0m")
+    actor = "子代理" if kwargs.get("is_subagent") else "主代理"
+    if total_count:
+        details = "，".join(f"{name} × {count}" for name, count in tool_usage_stats["tools"].items())
+        print(f"\n\033[90m{_log_prefix('运行统计')} {actor}本轮共调用 {total_count} 次工具：{details}\033[0m")
+    else:
+        print(f"\n\033[90m{_log_prefix('运行统计')} {actor}本轮未调用工具\033[0m")
     if final_content:
         print(f"\n[LLM]:\n{final_content}")
 
@@ -1808,11 +2262,77 @@ def handle_tool_call(raw_tool_call, available_funcs: dict, messages: list) -> bo
     })
     return called_todo
 
+
+class TeammateRuntime:
+    def __init__(self, name: str):
+        self.name = name
+        self.thread = threading.Thread(target=self.run, name=self.name, daemon=True)
+        self.system_prompt = SUBAGENT_SYSTEM_PROMPT + "\n你是执行 Agent，可以通过 task 抢占任务。当没有指令时请进入 IDLE，被拦截时使用 submit_plan。"
+        self.messages = []
+        self.stop_flag = False
+        plan_gates[self.name] = "required"
+        
+    def start(self):
+        self.thread.start()
+        
+    def run(self):
+        while getattr(self, "stop_flag", False) == False:
+            # 1. 优先读取 Bus
+            inbox = message_bus.read_inbox(self.name)
+            messages_to_process = []
+            for msg in inbox:
+                if msg["type"] == "approve_plan":
+                    plan_gates[self.name] = "approved"
+                    messages_to_process.append({"role": "user", "content": f"Lead 已批准你的计划: {msg['content']}。请继续执行。"})
+                elif msg["type"] == "reject_plan":
+                    plan_gates[self.name] = "required"
+                    messages_to_process.append({"role": "user", "content": f"Lead 拒绝了你的计划: {msg['content']}。请根据反馈重新制定并提交 plan。"})
+                else:
+                    messages_to_process.append({"role": "user", "content": f"【Lead 消息】: {msg['content']}"})
+            
+            # 2. 如果没有消息且是空闲状态，尝试去抢占任务
+            if not messages_to_process:
+                pending_tasks = task_manager.list_tasks(state=TaskState.PENDING.value)
+                claimed = False
+                for t in pending_tasks:
+                    res = task_manager.claim_task(t["id"], self.name)
+                    if res["success"]:
+                        claimed = True
+                        if t.get("worktree"):
+                            teammate_assignments[self.name] = t["worktree"]
+                        else:
+                            teammate_assignments.pop(self.name, None)
+                        messages_to_process.append({"role": "user", "content": f"成功抢占任务: {t['subject']}\n描述: {t['description']}\nWorktree: {t.get('worktree')}"})
+                        plan_gates[self.name] = "required" # 新任务重新需要审批
+                        break
+                
+                if not claimed:
+                    time.sleep(2)
+                    continue
+
+            # 3. 运行工作状态 (WORK)
+            pass
+            # 这里调用 agent_loop (需要稍微调整它不会无限死循环，而是处理完 tool 后如果不需要 tool 就退出，当前 agent_loop 在无 tool 时会 break)
+            # 所以直接调用一轮 agent_loop
+            final_messages = agent_loop(messages_to_process, latest_user_input="Auto-triggered task processing")
+            
+            # Agent_loop 处理完，发送结果给 Lead
+            last_msg = final_messages[-1]["content"] if final_messages else "已处理完毕"
+            message_bus.send({
+                "from": self.name,
+                "to": "lead",
+                "type": "idle_report",
+                "request_id": str(uuid.uuid4())[:8],
+                "content": last_msg
+            })
+            pass
+            time.sleep(2)
+
 def run_subagent(instruction: str, **kwargs) -> str:
     """
     执行一个子代理任务，最多执行30轮
     """
-    print(f"\033[92m[Subagent Start] 开始执行子任务: {instruction}\033[0m")
+    pass
     messages = [
         {"role": "system", "content": SUBAGENT_SYSTEM_PROMPT},
         {"role": "user", "content": instruction}
@@ -1857,7 +2377,7 @@ def run_subagent(instruction: str, **kwargs) -> str:
         final_content = f"【系统提示】子代理执行已达 {MAX_SUBAGENT_ITERATIONS} 轮最大上限，自动终止。"
         
     trigger_hooks("after_loop", messages=messages, final_content=final_content, is_subagent=True)
-    print(f"\033[92m[Subagent End] 子任务执行完毕。\033[0m")
+    pass
     return final_content
 
 def agent_loop(messages: list = None, latest_user_input: str = "") -> list:
@@ -1955,22 +2475,39 @@ if __name__ == "__main__":
     print("=== LLM 终端助手已启动 (输入 exit 或 quit 退出) ===")
     print("已加载配置 URL:", BASE_URL)
     
-    # 消息队列维护在外层循环（纯净的会话历史）
+    # AgentTeam: 启动 Lead
+    threading.current_thread().name = "lead"
+    print("\033[96m[AgentTeam] Lead 已启动。\033[0m")
+    
     chat_history = []
     
-    # 外层用户输入死循环：支持多轮持续交互
+    import select
+    import sys
+    
     while True:
         try:
-            user_msg = input("\n[User]: ")
+            # 优先读取 Bus 消息
+            inbox = message_bus.read_inbox("lead")
+            if inbox:
+                for msg in inbox:
+                    report = f"【来自 {msg['from']} 的消息 (类型:{msg['type']})】:\n{msg['content']}"
+                    print(f"\033[93m{report}\033[0m")
+                    chat_history.append({"role": "user", "content": report})
+                # 收到队友消息后，Lead 自动处理一轮
+                chat_history = agent_loop(chat_history, latest_user_input="Auto-reply to teammate messages")
+            
+            # 使用 select 实现非阻塞输入监听，使得能不断轮询 Bus (仅限类 Unix，Windows 兼容处理: 简化为每次检查 inbox 后进行 blocking input 或使用特定库，此处直接用带超时的方案或者仅在用户有输入时触发)
+            # 在 Windows 上 select.select 只能用于 sockets，因此这里采用简单的线程输入队列。
+            user_msg = input("\n[Lead User]: ")
             if not user_msg.strip():
                 continue
             if user_msg.strip().lower() in ["exit", "quit", "q"]:
                 print("程序已退出。")
                 break
-            # 将 user_input 放到外层循环，以及用户输入的消息队列也放到外层循环
+                
             chat_history.append({"role": "user", "content": user_msg})
-            # 外部调用该函数进行交互并累积历史记录
             chat_history = agent_loop(chat_history, user_msg)
+            
         except (KeyboardInterrupt, EOFError):
             print("\n检测到中断信号，程序已退出。")
             break

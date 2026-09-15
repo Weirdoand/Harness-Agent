@@ -1,0 +1,12 @@
+{
+  "id": "b461b75b-695b-40e6-aaf4-d89c5af6de95",
+  "subject": "create API endpoints",
+  "description": "Create API endpoints. Depends on the database schema.",
+  "state": "complete",
+  "owner": "teammate_1",
+  "blockBy": [
+    "28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758"
+  ],
+  "created_at": "2026-09-13T00:21:38.638221+08:00",
+  "updated_at": "2026-09-15T23:32:39.042220+08:00"
+}

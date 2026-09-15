@@ -1,0 +1,23 @@
+[
+  {
+    "from": "lead",
+    "to": "teammate_auth",
+    "type": "approve_plan",
+    "request_id": "5896321e",
+    "content": "计划批准。请在 .worktrees/auth-refactor（分支 refactor/auth, HEAD=f0db370）内执行，严格遵守：只读校验 + 纯增量补齐，不触碰受保护文件 notesapi/db.py / schema.sql / verify_schema.py，不改主树。完成后汇报：文件清单+状态、pytest 结果（用例数/通过数）、受保护文件 sha256 比对结论、worktree 是否干净、分支提交哈希。"
+  },
+  {
+    "from": "lead",
+    "to": "teammate_auth",
+    "type": "chat",
+    "request_id": "msg",
+    "content": "状态核对：计划已批准。请确认你是否仍在运行并立即执行收口（在 .worktrees/auth-refactor 内跑 pytest test_auth.py、比对受保护文件 sha256、报告提交哈希）。若你已离线/无法继续，请回复我，我将改以 Lead 身份直接核对并关闭任务 4eacba45。"
+  },
+  {
+    "from": "lead",
+    "to": "teammate_auth",
+    "type": "approve_plan",
+    "request_id": "f11e47e1",
+    "content": "计划批准。三处收紧：(1) 勘察与所有写入/测试一律在 .worktrees/auth-refactor 内进行（cd 到该 worktree），不得读改主树 workspace/notesapi/auth.py；(2) 受保护文件 sha256 基线请用 git show <branch>@{base}:path 或 git stash 前的提交内容比对，明确 base = f0db370 的父/初始提交，并把 db.py 基线锚定到 f0db370 版本（注意主树 db.py 现已被 teammate_config 改动，不要用主树文件当基线）；(3) 允许追加提交，但仅限 worktree 内、仅限 auth 相关文件（auth.py/test_auth.py），禁止 commit 任何非 auth 文件。完成后按固定口径汇报：文件清单+状态、pytest 用例数与结果、受保护文件 sha256 比对、worktree 干净度、分支提交哈希。"
+  }
+]

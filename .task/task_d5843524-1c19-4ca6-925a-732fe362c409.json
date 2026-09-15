@@ -1,0 +1,11 @@
+{
+  "id": "d5843524-1c19-4ca6-925a-732fe362c409",
+  "subject": "refactor: extract backend configuration",
+  "description": "Split the Notes API backend so that all configuration (DB path, secret key, environment overrides) lives in a dedicated config module. Preserve the existing public interfaces of db.py (get_connection / init_db / reset_db) exactly.",
+  "state": "complete",
+  "owner": "teammate_2",
+  "blockBy": [],
+  "worktree": null,
+  "created_at": "2026-09-15T00:48:49.686549+08:00",
+  "updated_at": "2026-09-15T23:30:19.344756+08:00"
+}

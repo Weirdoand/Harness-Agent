@@ -1,0 +1,11 @@
+{
+  "id": "4eacba45-44ad-436f-9ff4-62d671adb576",
+  "subject": "refactor: add authentication module",
+  "description": "Notes API 后端重构 - 认证模块。以纯增量方式实现密码哈希（PBKDF2-HMAC-SHA256 + 随机盐 + 常量时间比较）与 token 签发/校验（HMAC-SHA256）。硬约束：(1) 只能做加法，不得修改或改变任何已有接口；(2) 必须在隔离的 git worktree 目录 H:/AI Files/Harness-Agent/.worktrees/auth-refactor（分支 refactor/auth）中执行；(3) 不得触碰受保护文件 notesapi/db.py、notesapi/schema.sql、notesapi/verify_schema.py；(4) 完成后校验受保护文件未被改动、worktree 干净，并在分支上提交。",
+  "state": "complete",
+  "owner": "teammate_auth",
+  "blockBy": [],
+  "worktree": "H:/AI Files/Harness-Agent/.worktrees/auth-refactor",
+  "created_at": "2026-09-15T01:07:12.390376+08:00",
+  "updated_at": "2026-09-15T23:30:43.280544+08:00"
+}

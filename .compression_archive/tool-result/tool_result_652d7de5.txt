@@ -1,0 +1,202 @@
+# -*- coding: utf-8 -*-
+"""Verification for the Notes API configuration refactor (task d5843524).
+
+Run from the repository root::
+
+    python workspace/verify_config.py
+
+What it proves
+--------------
+1. ``db.get_connection`` / ``init_db`` / ``reset_db`` keep their exact
+   ``inspect.signature`` (parameter name ``db_path``, identity default,
+   ``sqlite3.Connection`` return annotation).
+2. ``db.DEFAULT_DB_PATH`` is re-exported for backward compatibility and still
+   resolves to ``<notesapi>/notes.db`` when no environment override is set.
+3. The full ``NOTES_API_*`` environment contract works, including the
+   ``NOTES_API_SECRET`` alias for ``NOTES_API_SECRET_KEY`` and precedence rules.
+4. ``config`` is import-safe: importing it creates no files and no DB.
+5. ``init_db(":memory:")`` produces the 5 expected tables and enables the
+   foreign-key pragma.
+"""
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+NOTESAPI_DIR = os.path.join(HERE, "notesapi")
+
+FAILURES = []
+
+
+def check(label, condition, extra=""):
+	status = "PASS" if condition else "FAIL"
+	line = "  [%s] %s" % (status, label)
+	if extra and not condition:
+		line += "  (%s)" % extra
+	print(line)
+	if not condition:
+		FAILURES.append(label)
+
+
+def clean_env(extra=None):
+	"""Environment with every NOTES_API_* var stripped, plus ``extra``."""
+	env = {k: v for k, v in os.environ.items()
+	       if not k.startswith("NOTES_API_")}
+	env["PYTHONPATH"] = NOTESAPI_DIR + os.pathsep + env.get("PYTHONPATH", "")
+	if extra:
+		env.update(extra)
+	return env
+
+
+def probe(code, extra_env=None, cwd=None):
+	"""Run ``code`` in a fresh interpreter; return (returncode, stdout, stderr)."""
+	proc = subprocess.run(
+		[sys.executable, "-c", code],
+		env=clean_env(extra_env),
+		cwd=cwd or HERE,
+		stdout=subprocess.PIPE,
+		stderr=subprocess.PIPE,
+		text=True,
+	)
+	return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
+
+
+def main():
+	print("notesapi dir:", NOTESAPI_DIR)
+	sys.path.insert(0, NOTESAPI_DIR)
+
+	import config  # noqa: E402
+	import db  # noqa: E402
+
+	expected_default = os.path.join(NOTESAPI_DIR, "notes.db")
+
+	# -- 1. db public interface is byte-for-byte compatible ---------------
+	print("\n1. db public interface / signatures")
+	import inspect  # noqa: E402
+
+	for name in ("get_connection", "init_db", "reset_db"):
+		sig = inspect.signature(getattr(db, name))
+		params = list(sig.parameters)
+		check("%s has exactly one parameter 'db_path'" % name,
+		      params == ["db_path"], "got %r" % params)
+		default = sig.parameters["db_path"].default
+		check("%s(db_path) default is DEFAULT_DB_PATH" % name,
+		      default == db.DEFAULT_DB_PATH, "got %r" % default)
+		check("%s default is not None (identity preserved)" % name,
+		      default is not None)
+		check("%s return annotation is sqlite3.Connection" % name,
+		      sig.return_annotation in ("sqlite3.Connection",), 
+		      "got %r" % sig.return_annotation)
+
+	check("db.DEFAULT_DB_PATH re-exported and endswith notes.db",
+	      hasattr(db, "DEFAULT_DB_PATH") and db.DEFAULT_DB_PATH.endswith("notes.db"),
+	      "got %r" % getattr(db, "DEFAULT_DB_PATH", None))
+	check("db.DEFAULT_DB_PATH == <notesapi>/notes.db (no env set)",
+	      db.DEFAULT_DB_PATH == expected_default, "got %r" % db.DEFAULT_DB_PATH)
+	check("db.SCHEMA_PATH points at notesapi/schema.sql",
+	      db.SCHEMA_PATH == os.path.join(NOTESAPI_DIR, "schema.sql"),
+	      "got %r" % db.SCHEMA_PATH)
+	check("config.DEFAULT_DB_PATH == <notesapi>/notes.db",
+	      config.DEFAULT_DB_PATH == expected_default,
+	      "got %r" % config.DEFAULT_DB_PATH)
+	check("db.DEFAULT_DB_PATH is config.DB_PATH (single source of truth)",
+	      db.DEFAULT_DB_PATH == config.DB_PATH)
+
+	# -- 2. defaults with a clean environment -----------------------------
+	print("\n2. config defaults (clean env)")
+	check("DB_PATH defaults to notes.db", config.DB_PATH == expected_default)
+	check("ENV defaults to development", config.ENV == "development")
+	check("HOST defaults to 127.0.0.1", config.HOST == "127.0.0.1")
+	check("PORT defaults to 8000 and is int",
+	      config.PORT == 8000 and isinstance(config.PORT, int))
+	check("SECRET_KEY has a non-empty dev fallback",
+	      config.SECRET_KEY == config.DEFAULT_SECRET_KEY and bool(config.SECRET_KEY))
+	check("DEBUG is True in development", config.DEBUG is True)
+
+	# -- 3. environment overrides (isolated subprocess) -------------------
+	print("\n3. environment overrides")
+	rc, out, err = probe("import config; print(config.DB_PATH)",
+	                     {"NOTES_API_DB_PATH": r"C:\tmp\custom.db"})
+	check("NOTES_API_DB_PATH -> DB_PATH override",
+	      rc == 0 and out == r"C:\tmp\custom.db", "rc=%s out=%r err=%r" % (rc, out, err))
+
+	rc, out, err = probe("import db; print(db.DEFAULT_DB_PATH)",
+	                     {"NOTES_API_DB_PATH": r"C:\tmp\custom.db"})
+	check("db honours NOTES_API_DB_PATH (gradient flows through)",
+	      rc == 0 and out == r"C:\tmp\custom.db", "rc=%s out=%r" % (rc, out))
+
+	rc, out, err = probe("import config; print(config.ENV, config.HOST, config.PORT, config.DEBUG)",
+	                     {"NOTES_API_ENV": "production", "NOTES_API_HOST": "0.0.0.0",
+	                      "NOTES_API_PORT": "9001"})
+	check("NOTES_API_ENV/HOST/PORT overrides applied",
+	      rc == 0 and out == "production 0.0.0.0 9001 False", "out=%r err=%r" % (out, err))
+
+	rc, out, err = probe("import config; print(config.PORT)",
+	                     {"NOTES_API_PORT": "not-a-number"})
+	check("bad NOTES_API_PORT degrades to default (import stays safe)",
+	      rc == 0 and out == "8000", "rc=%s out=%r err=%r" % (rc, out, err))
+
+	rc, out, err = probe("import config; print(config.DB_PATH)",
+	                     {"NOTES_API_DB_PATH": ""})
+	check("empty NOTES_API_DB_PATH is treated as absent",
+	      rc == 0 and out == expected_default, "rc=%s out=%r" % (rc, out))
+
+	# -- 4. secret-key alias + precedence ---------------------------------
+	print("\n4. secret key contract")
+	rc, out, err = probe("import config; print(config.SECRET_KEY)",
+	                     {"NOTES_API_SECRET": "alias-secret"})
+	check("NOTES_API_SECRET alias -> SECRET_KEY",
+	      rc == 0 and out == "alias-secret", "out=%r err=%r" % (out, err))
+
+	rc, out, err = probe("import config; print(config.SECRET_KEY)",
+	                     {"NOTES_API_SECRET_KEY": "canonical-secret"})
+	check("NOTES_API_SECRET_KEY -> SECRET_KEY",
+	      rc == 0 and out == "canonical-secret", "out=%r" % out)
+
+	rc, out, err = probe("import config; print(config.SECRET_KEY)",
+	                     {"NOTES_API_SECRET_KEY": "canonical-secret",
+	                      "NOTES_API_SECRET": "alias-secret"})
+	check("NOTES_API_SECRET_KEY wins over NOTES_API_SECRET",
+	      rc == 0 and out == "canonical-secret", "out=%r" % out)
+
+	# -- 5. import safety: no files / no DB created -----------------------
+	print("\n5. import safety")
+	with tempfile.TemporaryDirectory() as tmp:
+		rc, out, err = probe("import config; print('imported')", cwd=tmp)
+		leftovers = os.listdir(tmp)
+		check("importing config succeeds from a clean cwd",
+		      rc == 0 and out == "imported", "rc=%s err=%r" % (rc, err))
+		check("importing config creates no files in cwd", leftovers == [],
+		      "leftovers=%r" % leftovers)
+
+	# -- 6. schema still applies via init_db(":memory:") ------------------
+	print("\n6. init_db(':memory:') 5-table check")
+	conn = db.init_db(":memory:")
+	try:
+		cur = conn.cursor()
+		tables = {r["name"] for r in cur.execute(
+			"SELECT name FROM sqlite_master WHERE type='table'")}
+		expected = {"users", "notes", "tags", "note_tags", "schema_migrations"}
+		check("all 5 tables created", expected <= tables, "got %r" % sorted(tables))
+		check("foreign_keys pragma is ON",
+		      cur.execute("PRAGMA foreign_keys").fetchone()[0] == 1)
+		check("row_factory exposes columns by name",
+		      conn.execute("SELECT 1 AS one").fetchone()["one"] == 1)
+		check("migration v1 recorded",
+		      cur.execute("SELECT version FROM schema_migrations").fetchone()[0] == 1)
+	finally:
+		conn.close()
+
+	print("\n%s" % ("ALL CHECKS PASSED" if not FAILURES
+	                else "FAILED (%d): %s" % (len(FAILURES), FAILURES)))
+	return 1 if FAILURES else 0
+
+
+if __name__ == "__main__":
+	raise SystemExit(main())
+
+
+【系统提示】你已连续 3 次及以上未更新任务阶段步骤，请调用 todo_write 工具更新当前分解的子任务状态与进展。

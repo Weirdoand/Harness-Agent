@@ -1,0 +1,10 @@
+workspace/notesapi\auth.py
+workspace/notesapi\config.py
+workspace/notesapi\db.py
+workspace/notesapi\notes.db
+workspace/notesapi\schema.sql
+workspace/notesapi\verify_schema.py
+workspace/notesapi\__pycache__
+workspace/notesapi\__pycache__\auth.cpython-312.pyc
+workspace/notesapi\__pycache__\config.cpython-312.pyc
+workspace/notesapi\__pycache__\db.cpython-312.pyc

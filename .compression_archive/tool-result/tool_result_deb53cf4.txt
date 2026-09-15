@@ -1,0 +1,310 @@
+# -*- coding: utf-8 -*-
+"""Authentication helpers for the Notes API.
+
+This module is *purely additive*: it never imports or mutates ``db.py``,
+``schema.sql`` or ``verify_schema.py``.  Dropping it into an existing checkout
+cannot change their behaviour, and it can be adopted incrementally.
+
+Public surface
+--------------
+``ensure_auth_schema(conn)``          - idempotent DDL for credential storage
+``hash_password(password)``           - ``pbkdf2_sha256$<iters>$<salt_b64>$<hash_b64>``
+``verify_password(password, stored)`` - constant-time check; ``False`` on malformed input
+``create_token(subject, ...)``        - ``<payload_b64>.<sig_b64>``
+``verify_token(token, ...)``          - payload ``dict``, or ``None`` on tamper/expiry
+``resolve_secret()``                  - ``NOTES_API_SECRET`` env var, else config ``SECRET_KEY``
+
+Design notes
+------------
+* Password hashing uses PBKDF2-HMAC-SHA256 with a per-password random salt and
+  is compared with :func:`hmac.compare_digest` (no early-exit byte comparison).
+* ``verify_password`` is *total*: any malformed / truncated / non-string input
+  returns ``False`` and never raises.
+* Tokens are compact ``payload_b64.sig_b64`` blobs (URL-safe base64, padding
+  stripped) carrying ``sub`` / ``iat`` / ``exp``.  The signature is HMAC-SHA256
+  over the exact payload segment, so any tampering invalidates the token.
+* Silent by default: importing or using this module writes nothing to stdout or
+  stderr and installs no logging handlers.
+
+Secret resolution
+-----------------
+The signing secret is read from the ``NOTES_API_SECRET`` environment variable.
+If that is unset, we fall back to ``SECRET_KEY`` exported by an importable
+``config`` module (``config`` or ``notesapi.config``) so the auth module keeps
+working once the config task standardises on ``NOTES_API_SECRET_KEY`` /
+``SECRET_KEY``.  ``NOTES_API_SECRET_KEY`` is also honoured directly as a final
+compatibility fallback.
+"""
+from __future__ import annotations
+
+import base64
+import binascii
+import hashlib
+import hmac
+import importlib
+import json
+import os
+import sqlite3
+import time
+
+__all__ = [
+	"PBKDF2_PREFIX",
+	"DEFAULT_ITERATIONS",
+	"DEFAULT_TTL_SECONDS",
+	"SALT_BYTES",
+	"ensure_auth_schema",
+	"hash_password",
+	"verify_password",
+	"set_credential",
+	"verify_credential",
+	"create_token",
+	"verify_token",
+	"resolve_secret",
+]
+
+# --------------------------------------------------------------------------- #
+# Constants
+# --------------------------------------------------------------------------- #
+PBKDF2_PREFIX = "pbkdf2_sha256"
+DEFAULT_ITERATIONS = 200_000
+DEFAULT_TTL_SECONDS = 3600
+SALT_BYTES = 16
+
+# Guard rail: refuse absurd work factors so a tampered hash cannot turn a login
+# attempt into a multi-hour CPU burn.
+_MAX_ITERATIONS = 10_000_000
+
+
+# --------------------------------------------------------------------------- #
+# Small base64 / encoding helpers
+# --------------------------------------------------------------------------- #
+def _b64e(raw: bytes) -> str:
+	"""URL-safe base64 encode, padding stripped (compact + dot-safe)."""
+	return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def _b64d(text: str) -> bytes:
+	"""Decode URL-safe base64 that may have had its padding stripped."""
+	if not isinstance(text, str):
+		raise ValueError("expected a base64 string")
+	pad = "=" * (-len(text) % 4)
+	return base64.urlsafe_b64decode(text + pad)
+
+
+# --------------------------------------------------------------------------- #
+# Schema (additive DDL, kept out of schema.sql on purpose)
+# --------------------------------------------------------------------------- #
+def ensure_auth_schema(conn: sqlite3.Connection) -> None:
+	"""Create the credential table if it is missing.  Safe to call repeatedly.
+
+	The table lives outside ``schema.sql`` so the shared schema file (and the
+	migration bookkeeping it owns) stays untouched.  ``auth_credentials`` is a
+	one-to-one extension of ``users`` and cascades on user deletion.
+	"""
+	conn.executescript(
+		"""
+		CREATE TABLE IF NOT EXISTS auth_credentials (
+		    user_id       INTEGER PRIMARY KEY
+		                  REFERENCES users (id) ON DELETE CASCADE,
+		    password_hash TEXT    NOT NULL,
+		    created_at    TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+		    updated_at    TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+		);
+		"""
+	)
+
+
+# --------------------------------------------------------------------------- #
+# Password hashing
+# --------------------------------------------------------------------------- #
+def hash_password(password: str, *, iterations: int = DEFAULT_ITERATIONS,
+                  salt: bytes | None = None) -> str:
+	"""Return ``pbkdf2_sha256$<iters>$<salt_b64>$<hash_b64>`` for *password*."""
+	if isinstance(password, bytes):
+		password = password.decode("utf-8")
+	if not isinstance(password, str):
+		raise TypeError("password must be str")
+	if iterations <= 0:
+		raise ValueError("iterations must be positive")
+	if salt is None:
+		salt = os.urandom(SALT_BYTES)
+	elif not isinstance(salt, (bytes, bytearray)):
+		raise TypeError("salt must be bytes")
+
+	dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes(salt), iterations)
+	return "%s$%d$%s$%s" % (PBKDF2_PREFIX, iterations, _b64e(bytes(salt)), _b64e(dk))
+
+
+def verify_password(password: str, stored: str, *, iterations_override: int | None = None) -> bool:
+	"""Constant-time check of *password* against a stored hash.
+
+	Returns ``False`` for *any* malformed input (wrong part count, unknown
+	prefix, non-integer or absurd iteration count, invalid base64, non-string
+	arguments, ...).  Never raises.
+	"""
+	try:
+		if not isinstance(password, str) or not isinstance(stored, str):
+			return False
+		parts = stored.split("$")
+		if len(parts) != 4:
+			return False
+		prefix, iters_s, salt_b64, hash_b64 = parts
+		if prefix != PBKDF2_PREFIX:
+			return False
+		if not salt_b64 or not hash_b64:
+			return False
+		iters = int(iters_s)
+		if iters <= 0 or iters > _MAX_ITERATIONS:
+			return False
+		if iterations_override is not None:
+			iters = iterations_override
+		salt = _b64d(salt_b64)
+		expected = _b64d(hash_b64)
+		candidate = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iters)
+		return hmac.compare_digest(candidate, expected)
+	except (ValueError, TypeError, binascii.Error, UnicodeError):
+		return False
+	except Exception:  # pragma: no cover - belt and braces, must never raise
+		return False
+
+
+# --------------------------------------------------------------------------- #
+# Convenience: credential rows
+# --------------------------------------------------------------------------- #
+def set_credential(conn: sqlite3.Connection, user_id: int, password: str,
+                   *, iterations: int = DEFAULT_ITERATIONS) -> str:
+	"""Upsert a password hash for *user_id* and return the stored hash."""
+	ensure_auth_schema(conn)
+	stored = hash_password(password, iterations=iterations)
+	with conn:
+		conn.execute(
+			"""
+			INSERT INTO auth_credentials (user_id, password_hash)
+			     VALUES (?, ?)
+			ON CONFLICT (user_id) DO UPDATE SET
+			     password_hash = excluded.password_hash,
+			     updated_at    = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+			""",
+			(user_id, stored),
+		)
+	return stored
+
+
+def verify_credential(conn: sqlite3.Connection, user_id: int, password: str) -> bool:
+	"""Check *password* against the stored hash for *user_id* (``False`` if none)."""
+	try:
+		row = conn.execute(
+			"SELECT password_hash FROM auth_credentials WHERE user_id = ?",
+			(user_id,),
+		).fetchone()
+	except sqlite3.OperationalError:
+		return False
+	if row is None:
+		return False
+	stored = row["password_hash"] if isinstance(row, sqlite3.Row) else row[0]
+	return verify_password(password, stored)
+
+
+# --------------------------------------------------------------------------- #
+# Tokens
+# --------------------------------------------------------------------------- #
+def resolve_secret() -> str:
+	"""Resolve the token signing secret.
+
+	Order of precedence:
+
+	1. ``NOTES_API_SECRET`` (canonical name for this module),
+	2. ``SECRET_KEY`` from an importable ``config`` / ``notesapi.config`` module
+	   (the config task's home for the value),
+	3. ``NOTES_API_SECRET_KEY`` (config task's env-var spelling) as a last resort.
+
+	Returns an empty string when nothing is configured; callers that need a
+	non-empty secret should check for it explicitly.
+	"""
+	for env_name in ("NOTES_API_SECRET", "NOTES_API_SECRET_KEY"):
+		value = os.environ.get(env_name)
+		if value:
+			return value
+
+	for module_name in ("config", "notesapi.config"):
+		try:
+			module = importlib.import_module(module_name)
+		except Exception:
+			continue
+		value = getattr(module, "SECRET_KEY", None)
+		if value:
+			return str(value)
+	return ""
+
+
+def _sign(payload_b64: str, secret: str) -> str:
+	digest = hmac.new(secret.encode("utf-8"), payload_b64.encode("ascii"), hashlib.sha256).digest()
+	return _b64e(digest)
+
+
+def create_token(subject: object, *, ttl_seconds: int = DEFAULT_TTL_SECONDS,
+                 now: float | None = None, secret: str | None = None,
+                 extra: dict | None = None) -> str:
+	"""Build a signed ``payload_b64.sig_b64`` token for *subject*.
+
+	The payload carries ``sub`` (subject), ``iat`` (issued-at) and ``exp``
+	(expiry), all UNIX seconds, plus any *extra* claims.
+	"""
+	if secret is None:
+		secret = resolve_secret()
+	if now is None:
+		now = time.time()
+
+	payload = {
+		"sub": subject,
+		"iat": int(now),
+		"exp": int(now) + int(ttl_seconds),
+	}
+	if extra:
+		payload.update(extra)
+
+	payload_b64 = _b64e(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8"))
+	return "%s.%s" % (payload_b64, _sign(payload_b64, secret))
+
+
+def verify_token(token: str, *, now: float | None = None,
+                 secret: str | None = None) -> dict | None:
+	"""Validate *token* and return its payload, or ``None``.
+
+	``None`` is returned for a tampered payload, a bad signature, a malformed
+	or non-string token, a missing required claim, or an expired token.  Never
+	raises.
+	"""
+	try:
+		if not isinstance(token, str):
+			return None
+		if secret is None:
+			secret = resolve_secret()
+		if now is None:
+			now = time.time()
+
+		parts = token.split(".")
+		if len(parts) != 2:
+			return None
+		payload_b64, sig_b64 = parts
+		if not payload_b64 or not sig_b64:
+			return None
+
+		expected_sig = _sign(payload_b64, secret)
+		if not hmac.compare_digest(expected_sig, sig_b64):
+			return None
+
+		payload = json.loads(_b64d(payload_b64).decode("utf-8"))
+		if not isinstance(payload, dict):
+			return None
+		for claim in ("sub", "iat", "exp"):
+			if claim not in payload:
+				return None
+		exp = payload["exp"]
+		if isinstance(exp, bool) or not isinstance(exp, (int, float)):
+			return None
+		if exp <= now:
+			return None
+		return payload
+	except Exception:
+		return None

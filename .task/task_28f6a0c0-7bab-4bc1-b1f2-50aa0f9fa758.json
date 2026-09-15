@@ -1,0 +1,10 @@
+{
+  "id": "28f6a0c0-7bab-4bc1-b1f2-50aa0f9fa758",
+  "subject": "setup database schema",
+  "description": "Design and set up the database schema.",
+  "state": "complete",
+  "owner": "agent",
+  "blockBy": [],
+  "created_at": "2026-09-13T00:21:38.635061+08:00",
+  "updated_at": "2026-09-13T00:24:59.868412+08:00"
+}

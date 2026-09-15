@@ -1,0 +1,9 @@
+[
+  {
+    "from": "lead",
+    "to": "agent",
+    "type": "approve_plan",
+    "request_id": "7f539ffb",
+    "content": "Lead approval for the submitted integration plan: proceed with read-only baseline verification, then merge refactor/auth into main (no-ff) once teammate_1 and teammate_2 report completion, then release the test gate on 23793b0c."
+  }
+]

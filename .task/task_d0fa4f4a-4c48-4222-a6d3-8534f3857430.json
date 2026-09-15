@@ -1,0 +1,14 @@
+{
+  "id": "d0fa4f4a-4c48-4222-a6d3-8534f3857430",
+  "subject": "refactor: add backend test suite",
+  "description": "Notes API 后端重构 - 后端测试套件。为重构后的配置模块、认证模块以及既有 db 接口编写可执行的测试（pytest 风格），覆盖：config 的环境变量契约与导入安全性、db 公共接口签名不变、认证的哈希/校验/token 有效与篡改场景。必须在配置与认证两项完成后进行。",
+  "state": "complete",
+  "owner": "lead",
+  "blockBy": [
+    "f5d814aa-d60e-4a14-8bca-78c1e8391b7c",
+    "4eacba45-44ad-436f-9ff4-62d671adb576"
+  ],
+  "worktree": null,
+  "created_at": "2026-09-15T01:07:12.400603+08:00",
+  "updated_at": "2026-09-15T23:33:00.809988+08:00"
+}

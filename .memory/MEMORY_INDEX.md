@@ -1,25 +1,22 @@
-- [complete_task 方法行为](complete_task 方法行为.md) - complete_task 更新任务状态并解锁依赖任务。
-- [Cron 定时任务 a0f9fbd0 (run date)](Cron 定时任务 a0f9fbd0 (run date).md) - 项目中存在一个名为 run date 的 Cron 定时任务，周期性执行 date 命令
-- [Cron 定时任务 a0f9fbd0](Cron 定时任务 a0f9fbd0.md) - 环境中存在一个每 2 分钟执行一次 date 命令的 Cron 定时任务
-- [Cron 定时任务 run date](Cron 定时任务 run date.md) - 项目中存在一个每 2 分钟触发、执行 date 命令的 Cron 定时任务 a0f9fbd0
-- [Cron定时任务 run date](Cron定时任务 run date.md) - 项目中存在一个名为 run date 的周期性 Cron 定时任务（ID: a0f9fbd0），用于执行 date 命令。
-- [Cron定时任务a0f9fbd0](Cron定时任务a0f9fbd0.md) - 一个持久化 Cron 定时任务，每 2 分钟执行一次 run date。
-- [Cron定时任务运行date命令](Cron定时任务运行date命令.md) - 系统存在一个Cron定时任务，周期性执行date命令并异步返回结果
-- [Harness-Agent TaskManager 导入方式](Harness-Agent TaskManager 导入方式.md) - TaskManager 类位于 llm_chat 模块，直接 import task_manager 会失败。
-- [Harness-Agent 无 package.json](Harness-Agent 无 package.json.md) - 项目不存在 package.json，npm install 会以 ENOENT 失败；仅有一个空骨架 package-lock.json。
-- [Harness-Agent 项目位置](Harness-Agent 项目位置.md) - 当前工作环境中的 Harness-Agent 项目位于 H:\AI Files\Harness-Agent，涉及任务管理与 skills 技能包
-- [Harness-Agent 项目概况](Harness-Agent 项目概况.md) - 用户拥有/正在开发 Harness-Agent 项目，包含任务管理与 skills 技能包，并配置了 Cron 定时任务
-- [Harness-Agent 项目目录与结构](Harness-Agent 项目目录与结构.md) - 工作目录 H:\AI Files\Harness-Agent 的顶层内容与 workspace、归档路径。
-- [skills 技能文档结构](skills 技能文档结构.md) - skills/ 目录下的四个技能包及其 SKILL.md 与 references 子目录结构。
-- [代码缩进偏好](代码缩进偏好.md) - 用户偏好使用制表符（tabs）缩进：新代码用 tabs，已有文件沿用原风格。
-- [任务依赖图与任务 ID](任务依赖图与任务 ID.md) - 项目四个开发任务及其依赖关系与持久化 ID。
-- [任务依赖图创建流程](任务依赖图创建流程.md) - 在 Harness-Agent 中用 TaskManager 创建带依赖关系任务的标准步骤。
-- [任务管理工具函数](任务管理工具函数.md) - 任务管理系统提供的工具函数列表。
-- [任务阶段更新反馈](任务阶段更新反馈.md) - 连续 3 次及以上未更新任务阶段步骤时，系统会提示调用 todo_write 更新进展。
-- [取消的定时任务 a0f9fbd0](取消的定时任务 a0f9fbd0.md) - 记录了一次被取消的持久化定时任务，该任务每2分钟运行一次 date 命令。
-- [后台任务机制](后台任务机制.md) - 后台任务异步执行，完成后结果自动注入上下文，无需轮询。
-- [对 static 的偏好](对 static 的偏好.md) - 用户表示不喜欢 static，但具体指代与适用范围尚未明确，需后续澄清。
-- [用户项目概况：Harness-Agent 与 Cron 任务](用户项目概况：Harness-Agent 与 Cron 任务.md) - 用户正在进行的项目包括 Harness-Agent（任务管理 + skills 技能包）以及若干 Cron 定时任务。
-- [运行环境为 Windows cmd（无 Unix find）](运行环境为 Windows cmd（无 Unix find）.md) - 本环境是 Windows cmd，find 命令语义与 Unix 不同，会导致命令失败。
-- [项目 Markdown 文件清单](项目 Markdown 文件清单.md) - 项目全部 Markdown 文件（含 skills 与 需求文档 子目录）共 10 个。
-- [项目 Python 文件清单](项目 Python 文件清单.md) - 截至本次对话，项目目录下找到的 Python 文件列表与分布。
+- [Harness-Agent 仓库、worktree 与路径约定](Harness-Agent 仓库、worktree 与路径约定.md) - 仓库根、主分支、隔离 worktree、归档路径及隔离改动约定。
+- [Harness-Agent 项目概况与目录结构](Harness-Agent 项目概况与目录结构.md) - 项目路径、顶层结构、skills、workspace/notesapi 文件与测试参照。
+- [Notes API 后端重构任务集与测试要求](Notes API 后端重构任务集与测试要求.md) - Notes API 后端重构的三个任务、owner、依赖关系及测试覆盖要求。
+- [Notes API 认证模块实现与安全约束](Notes API 认证模块实现与安全约束.md) - 认证任务已完成，纯增量 auth.py + test_auth.py，32 测试全绿，PBKDF2/HMAC-SHA256。
+- [Notes API 认证模块需求](Notes API 认证模块需求.md) - 为 Notes API 添加认证模块的具体要求
+- [Notes API 配置模块设计与重构结果](Notes API 配置模块设计与重构结果.md) - config.py env-driven、import-safe；db.py 从 config 读取 DB_PATH；f5d814aa 已完成。
+- [Notes API 重构任务集与测试套件要求](Notes API 重构任务集与测试套件要求.md) - 三个重构任务、依赖关系、测试覆盖要求与历史任务节点。
+- [Windows cmd 环境与文件枚举](Windows cmd 环境与文件枚举.md) - 环境为 Windows cmd，无 Unix find，递归枚举用 dir /a /s /b。
+- [代码缩进偏好](代码缩进偏好.md) - 新代码默认用制表符缩进；修改已有文件沿用其原风格。
+- [任务板与任务管理机制](任务板与任务管理机制.md) - 任务落盘 .task/*.json，通过共享板协调；TaskManager 从 llm_chat 导入。
+- [任务板工作流](任务板工作流.md) - 项目使用任务板管理任务，任务对象包含多个字段
+- [任务范围与阶段更新反馈](任务范围与阶段更新反馈.md) - 只认领分配任务、不越界；连续未更新 todo 会被强制要求 todo_write。
+- [协作汇报口径与流程偏好](协作汇报口径与流程偏好.md) - 多 Agent 协作时的计划审批、总线通知、收口汇报格式与 worktree 要求。
+- [受保护文件与 db.py 公共接口契约](受保护文件与 db.py 公共接口契约.md) - db.py/schema.sql/verify_schema.py 受保护；db.py 公共接口与行为不得改变。
+- [后台任务机制](后台任务机制.md) - 后台任务异步执行，结果自动注入上下文，无需轮询或重复执行。
+- [后端测试与执行方式](后端测试与执行方式.md) - 后端测试文件位置及运行方式
+- [启动并行队友前需用户确认](启动并行队友前需用户确认.md) - 完成侦察与分工提议后，必须等用户确认才 spawn 并行队友。
+- [多智能体协作角色](多智能体协作角色.md) - 项目中使用多个 teammate 角色进行协作
+- [工具结果压缩归档](工具结果压缩归档.md) - 长工具输出被压缩为 .compression_archive/tool-result/tool_result_<hash>.txt。
+- [工具结果归档目录](工具结果归档目录.md) - 项目使用 .compression_archive/tool-result/ 存放工具结果归档文件
+- [执行闸门与计划审批流程](执行闸门与计划审批流程.md) - pending/required 状态下写操作被闸门拦截，须先 submit_plan 给 Lead 审批；只读操作允许。
+- [项目根路径](项目根路径.md) - Harness-Agent 项目的本地根目录路径
