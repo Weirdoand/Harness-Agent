@@ -63,3 +63,6 @@ Lead Agent 承担系统的大脑与任务调度职责：
 ## 7. 异常处理机制 (Exception Handling)
 - **并发防冲突**：对 MessageBus 信箱和 `.task/` 任务目录的读写均辅以严格的锁机制，保证并发环境下的数据一致性。
 - **状态回归**：对于任务节点未设计 `failed` 状态。执行过程的容错与状态回归主要依赖于 Teammate 与 Lead 的沟通（通过 MessageBus 报告错误）以及重试机制。
+# S15 Agent 隔离
+
+Teammate 必须先原子认领任务再启动；没有 assignment 时禁止文件和 Shell 工具。

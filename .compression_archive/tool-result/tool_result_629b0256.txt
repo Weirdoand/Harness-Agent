@@ -1,0 +1,105 @@
+# -*- coding: utf-8 -*-
+"""Centralised, import-safe configuration for the Notes API.
+
+Every option is sourced from the process environment under the ``NOTES_API_``
+prefix, resolved exactly once at import time. Importing this module reads
+``os.environ`` and nothing else: it does **not** create files, open database
+connections, spawn threads, or mutate global process state, so it is safe to
+import from anywhere (application, tests, tooling).
+
+Environment contract
+--------------------
+==========================  ============  ==================================
+Environment variable        Attribute     Notes / default
+==========================  ============  ==================================
+``NOTES_API_DB_PATH``       ``DB_PATH``   default ``<pkg>/notes.db``
+``NOTES_API_SECRET_KEY``    ``SECRET_KEY`` preferred spelling
+``NOTES_API_SECRET``        ``SECRET_KEY`` accepted **alias** for the above
+``NOTES_API_ENV``           ``ENV``       default ``"development"``
+``NOTES_API_HOST``          ``HOST``      default ``"127.0.0.1"``
+``NOTES_API_PORT``          ``PORT``      default ``8000`` (int)
+==========================  ============  ==================================
+
+``SECRET_KEY`` resolution order: ``NOTES_API_SECRET_KEY`` -> ``NOTES_API_SECRET``
+-> :data:`DEFAULT_SECRET_KEY`. The ``NOTES_API_SECRET`` alias exists so the
+authentication module can keep a short name; both spellings resolve to the same
+attribute and, when both are set, the canonical ``..._SECRET_KEY`` wins.
+"""
+from __future__ import annotations
+
+import os
+
+# ---------------------------------------------------------------------------
+# Paths (kept identical to the historical db.py values).
+# ---------------------------------------------------------------------------
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+#: Canonical, un-overridden location of the SQLite database file.
+#: Historically this was ``db.DEFAULT_DB_PATH``; it now lives here and is
+#: re-exported by :mod:`db` for backward compatibility.
+DEFAULT_DB_PATH = os.path.join(HERE, "notes.db")
+
+#: Development-only fallback secret. Never rely on this in production.
+DEFAULT_SECRET_KEY = "dev-insecure-secret-change-me"
+
+_ENV_PREFIX = "NOTES_API_"
+
+#: Fallback application environment.
+DEFAULT_ENV = "development"
+#: Fallback bind host.
+DEFAULT_HOST = "127.0.0.1"
+#: Fallback bind port.
+DEFAULT_PORT = 8000
+
+
+def _read(name, default=None):
+    """Return ``NOTES_API_<name>`` from the environment, or ``default``.
+
+    An unset *or empty* variable is treated as absent, which keeps import-time
+    behaviour deterministic even when a variable is exported as ``""``.
+    """
+    value = os.environ.get(_ENV_PREFIX + name)
+    if value is None or value == "":
+        return default
+    return value
+
+
+def _read_int(name, default):
+    """Like :func:`_read` but coerces to ``int``; falls back on bad input.
+
+    Malformed values degrade to ``default`` rather than raising so that a
+    single bad environment variable can never make importing this module fail.
+    """
+    raw = _read(name)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+# ---------------------------------------------------------------------------
+# Effective settings (resolved once, at import time).
+# ---------------------------------------------------------------------------
+
+#: Effective database path: honours ``NOTES_API_DB_PATH``, else the default.
+DB_PATH = _read("DB_PATH", DEFAULT_DB_PATH)
+
+#: Effective secret key: ``NOTES_API_SECRET_KEY`` -> ``NOTES_API_SECRET`` -> fallback.
+SECRET_KEY = _read("SECRET_KEY") or _read("SECRET") or DEFAULT_SECRET_KEY
+
+#: Application environment name (e.g. ``"development"``, ``"production"``).
+ENV = _read("ENV", DEFAULT_ENV)
+
+#: Bind host for the HTTP server.
+HOST = _read("HOST", DEFAULT_HOST)
+
+#: Bind port for the HTTP server (int).
+PORT = _read_int("PORT", DEFAULT_PORT)
+
+#: ``True`` unless ``ENV`` is a production-style value.
+DEBUG = ENV not in ("production", "prod")
+
+
+【系统提示】你已连续 3 次及以上未更新任务阶段步骤，请调用 todo_write 工具更新当前分解的子任务状态与进展。

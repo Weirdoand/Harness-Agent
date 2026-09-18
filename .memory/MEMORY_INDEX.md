@@ -1,22 +1,24 @@
-- [Harness-Agent 仓库、worktree 与路径约定](Harness-Agent 仓库、worktree 与路径约定.md) - 仓库根、主分支、隔离 worktree、归档路径及隔离改动约定。
-- [Harness-Agent 项目概况与目录结构](Harness-Agent 项目概况与目录结构.md) - 项目路径、顶层结构、skills、workspace/notesapi 文件与测试参照。
-- [Notes API 后端重构任务集与测试要求](Notes API 后端重构任务集与测试要求.md) - Notes API 后端重构的三个任务、owner、依赖关系及测试覆盖要求。
+- [Agent Builder 技能的核心哲学与循环模型](Agent Builder 技能的核心哲学与循环模型.md) - SKILL.md 中关于 agent 本质是简单循环、模型自带 agent 能力的论述
+- [Agent 设计参考资料与最小循环实现](Agent 设计参考资料与最小循环实现.md) - Agent 三大要素、核心理念、agent-builder 资料路径与最小循环实现。
+- [Harness-Agent 仓库结构、worktree 与路径约定](Harness-Agent 仓库结构、worktree 与路径约定.md) - 仓库路径、顶层结构、核心文件、worktree 隔离、归档路径与约定。
+- [Harness-Agent 真实实现 llm_chat.py 与教学样例的差异](Harness-Agent 真实实现 llm_chat.py 与教学样例的差异.md) - 仓库中真正运行的 agent 循环位于 llm_chat.py，比教学样例多出重试、门禁、消息总线、plan 审批等机制
+- [Harness-Agent 项目结构与关键路径](Harness-Agent 项目结构与关键路径.md) - Harness-Agent 仓库的工作目录、工具结果归档目录及主要文件/目录布局
+- [llm_chat.py 核心职责与全局运行参数](llm_chat.py 核心职责与全局运行参数.md) - llm_chat.py 单文件承载运行时：LLM 调用、后台管理、压缩、技能加载、工具实现与全局参数。
+- [MCP 服务与工具调用](MCP 服务与工具调用.md) - docs/deploy 均为本地 mock；工具命名 mcp__<server>__<tool>；connect_mcp 重复连接幂等。
+- [minimal-agent.py 的循环实现要点](minimal-agent.py 的循环实现要点.md) - references/minimal-agent.py 中 agent() 函数的循环写法与消息历史维护方式
+- [Notes API 后端重构任务集与测试要求](Notes API 后端重构任务集与测试要求.md) - 三个重构任务、依赖关系、测试覆盖要求与当前状态。
+- [Notes API 认证模块与登录页现状](Notes API 认证模块与登录页现状.md) - Harness-Agent 仓库中认证模块存在但前端登录页完全不存在
 - [Notes API 认证模块实现与安全约束](Notes API 认证模块实现与安全约束.md) - 认证任务已完成，纯增量 auth.py + test_auth.py，32 测试全绿，PBKDF2/HMAC-SHA256。
-- [Notes API 认证模块需求](Notes API 认证模块需求.md) - 为 Notes API 添加认证模块的具体要求
 - [Notes API 配置模块设计与重构结果](Notes API 配置模块设计与重构结果.md) - config.py env-driven、import-safe；db.py 从 config 读取 DB_PATH；f5d814aa 已完成。
-- [Notes API 重构任务集与测试套件要求](Notes API 重构任务集与测试套件要求.md) - 三个重构任务、依赖关系、测试覆盖要求与历史任务节点。
+- [subagent-pattern.py 的子代理调度与工具白名单机制](subagent-pattern.py 的子代理调度与工具白名单机制.md) - AGENT_TYPES 工具白名单、Task 工具排除规则及子代理运行循环
+- [task_manager.py 与任务板机制](task_manager.py 与任务板机制.md) - TaskManager 导入方式、任务落盘字段、共享任务板与多智能体协作角色。
+- [todo_write 阶段步骤更新约束](todo_write 阶段步骤更新约束.md) - 连续 3 次及以上未更新任务阶段步骤时，系统会提示调用 todo_write 更新子任务状态与进展。
 - [Windows cmd 环境与文件枚举](Windows cmd 环境与文件枚举.md) - 环境为 Windows cmd，无 Unix find，递归枚举用 dir /a /s /b。
-- [代码缩进偏好](代码缩进偏好.md) - 新代码默认用制表符缩进；修改已有文件沿用其原风格。
-- [任务板与任务管理机制](任务板与任务管理机制.md) - 任务落盘 .task/*.json，通过共享板协调；TaskManager 从 llm_chat 导入。
-- [任务板工作流](任务板工作流.md) - 项目使用任务板管理任务，任务对象包含多个字段
+- [代码缩进偏好](代码缩进偏好.md) - 新代码默认制表符缩进，修改已有文件沿用原风格。
 - [任务范围与阶段更新反馈](任务范围与阶段更新反馈.md) - 只认领分配任务、不越界；连续未更新 todo 会被强制要求 todo_write。
-- [协作汇报口径与流程偏好](协作汇报口径与流程偏好.md) - 多 Agent 协作时的计划审批、总线通知、收口汇报格式与 worktree 要求。
+- [协作工作方式与汇报口径](协作工作方式与汇报口径.md) - 多 Agent 协作：先建任务/提计划待批，收口汇报固定口径，启动队友前需用户确认。
 - [受保护文件与 db.py 公共接口契约](受保护文件与 db.py 公共接口契约.md) - db.py/schema.sql/verify_schema.py 受保护；db.py 公共接口与行为不得改变。
-- [后台任务机制](后台任务机制.md) - 后台任务异步执行，结果自动注入上下文，无需轮询或重复执行。
-- [后端测试与执行方式](后端测试与执行方式.md) - 后端测试文件位置及运行方式
-- [启动并行队友前需用户确认](启动并行队友前需用户确认.md) - 完成侦察与分工提议后，必须等用户确认才 spawn 并行队友。
-- [多智能体协作角色](多智能体协作角色.md) - 项目中使用多个 teammate 角色进行协作
-- [工具结果压缩归档](工具结果压缩归档.md) - 长工具输出被压缩为 .compression_archive/tool-result/tool_result_<hash>.txt。
-- [工具结果归档目录](工具结果归档目录.md) - 项目使用 .compression_archive/tool-result/ 存放工具结果归档文件
+- [后台任务机制与结果注入](后台任务机制与结果注入.md) - 后台任务异步执行，结果自动注入上下文，无需轮询或重复执行。
+- [四级上下文压缩与工具结果归档](四级上下文压缩与工具结果归档.md) - Compression 四级策略与 .compression_archive/tool-result/ 归档机制。
+- [工具结果本地归档路径](工具结果本地归档路径.md) - Harness-Agent 压缩归档的工具结果存放目录
 - [执行闸门与计划审批流程](执行闸门与计划审批流程.md) - pending/required 状态下写操作被闸门拦截，须先 submit_plan 给 Lead 审批；只读操作允许。
-- [项目根路径](项目根路径.md) - Harness-Agent 项目的本地根目录路径

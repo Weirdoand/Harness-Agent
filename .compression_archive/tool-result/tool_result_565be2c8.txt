@@ -77,3 +77,6 @@ class TestTaskManager(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+【系统提示】你已连续 3 次及以上未更新任务阶段步骤，请调用 todo_write 工具更新当前分解的子任务状态与进展。

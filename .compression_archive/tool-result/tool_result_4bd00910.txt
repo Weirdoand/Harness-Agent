@@ -1,0 +1,78 @@
+
+    # Run the same agent loop (but silently)
+    while True:
+        response = client.messages.create(
+            model=model,
+            system=sub_system,
+            messages=sub_messages,
+            tools=sub_tools,
+            max_tokens=8000,
+        )
+
+        # Check if done
+        if response.stop_reason != "tool_use":
+            break
+
+        # Execute tools
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        results = []
+
+        for tc in tool_calls:
+            tool_count += 1
+            output = execute_tool(tc.name, tc.input)
+            results.append({
+                "type": "tool_result",
+                "tool_use_id": tc.id,
+                "content": output
+            })
+
+            # Update progress (in-place on same line)
+            elapsed = time.time() - start
+            sys.stdout.write(
+                f"\r  [{agent_type}] {description} ... {tool_count} tools, {elapsed:.1f}s"
+            )
+            sys.stdout.flush()
+
+        sub_messages.append({"role": "assistant", "content": response.content})
+        sub_messages.append({"role": "user", "content": results})
+
+    # Final progress update
+    elapsed = time.time() - start
+    sys.stdout.write(
+        f"\r  [{agent_type}] {description} - done ({tool_count} tools, {elapsed:.1f}s)\n"
+    )
+
+    # Extract and return ONLY the final text
+    # This is what the parent agent sees - a clean summary
+    for block in response.content:
+        if hasattr(block, "text"):
+            return block.text
+
+    return "(subagent returned no text)"
+
+
+# =============================================================================
+# USAGE EXAMPLE
+# =============================================================================
+
+"""
+# In your main agent's execute_tool function:
+
+def execute_tool(name: str, args: dict) -> str:
+    if name == "Task":
+        return run_task(
+            description=args["description"],
+            prompt=args["prompt"],
+            agent_type=args["agent_type"],
+            client=client,
+            model=MODEL,
+            workdir=WORKDIR,
+            base_tools=BASE_TOOLS,
+            execute_tool=execute_tool  # Pass self for recursion
+        )
+    # ... other tools ...
+
+
+# In your TOOLS list:
+TOOLS = BASE_TOOLS + [TASK_TOOL]
+"""

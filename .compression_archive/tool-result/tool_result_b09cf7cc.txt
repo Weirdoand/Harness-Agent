@@ -14,13 +14,6 @@ import re
 import queue
 import signal
 TURN_CONTEXT = threading.local()
-STDIN_LOCK = threading.Lock()
-def _console_input(prompt, input_fn=None):
-    try:
-        with STDIN_LOCK:
-            return (input_fn or input)(prompt)
-    except (EOFError, KeyboardInterrupt):
-        return None
 
 # ---------- 全局运行参数 ----------
 MAX_SUBAGENT_ITERATIONS = 30   # run_subagent 子代理最大迭代轮数
@@ -2540,15 +2533,14 @@ def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
     def _ask_user(question: str) -> bool:
         """交互式确认；无可用终端(EOFError)时默认拒绝，避免权限校验 fail-open。"""
         try:
-            answer = _console_input(question)
-            return answer is not None and answer.strip().lower() == "yes"
-        except (EOFError, KeyboardInterrupt):
+            return input(question).strip().lower() == "yes"
+        except EOFError:
             print("\033[31m[权限校验] 无交互终端，无法完成确认，操作已默认拒绝。\033[0m")
             return False
 
     # AgentTeam 闸门拦截逻辑
     agent_name = threading.current_thread().name
-    if not getattr(TURN_CONTEXT, "interactive", False) and (tool.name in {"run_bash","bash"} or tool.name.startswith("mcp__")):
+    if not getattr(TURN_CONTEXT, "interactive", True) and (tool.name in {"run_bash","bash"} or tool.name.startswith("mcp__")):
         return False, "自动轮次禁止执行需要交互确认的 Bash/MCP 工具。"
     if tool.name in ["run_bash", "bash", "write_file", "edit_file", "read_file", "glob_bash", "glob"] and agent_name != "lead" and agent_name not in teammate_assignments:
         return False, "执行失败：Teammate 尚未认领带 Worktree 的任务，禁止文件或 Shell 操作。"
@@ -2973,33 +2965,27 @@ def agent_loop(messages: list = None, latest_user_input: str = "", interactive_t
 def has_pending_runtime_event():
     return bool(cron_manager.pending_queue or any(not t.get("notified") and t.get("status") in {"COMPLETED","FAILED","KILLED"} for t in bg_manager.tasks.values()) or message_bus.has_messages("lead"))
 
-def run_cli(input_fn=None, agent_loop_fn=None, event_fn=None, start_services_fn=None, poll_interval=.2):
+def run_cli():
     """Queue-driven CLI entry; automatic events share the Lead history."""
-    (start_services_fn or cron_manager.start_services)(); print("=== LLM 终端助手已启动 ===")
-    agent_loop_fn = agent_loop_fn or agent_loop; event_fn = event_fn or has_pending_runtime_event
+    cron_manager.start_services(); print("=== LLM 终端助手已启动 ===")
     threading.current_thread().name="lead"; history=[]; user_queue=queue.Queue(); ready=threading.Event(); done=threading.Event()
-    input_pending=False; sentinel=object()
     def reader():
         while not done.is_set():
             ready.wait(); ready.clear()
-            value=_console_input("\n[Lead User]: ", input_fn)
-            user_queue.put(sentinel if value is None else value)
-            if value is None: return
+            try: user_queue.put(input("\n[Lead User]: "))
+            except (EOFError, KeyboardInterrupt): user_queue.put("exit"); return
     threading.Thread(target=reader,daemon=True).start()
     while True:
-        if not input_pending: ready.set(); input_pending=True
-        msg=None
+        ready.set(); msg=None
         try: msg=user_queue.get(timeout=.2)
         except queue.Empty: pass
         if msg is not None:
-            input_pending=False
-            if msg is sentinel: done.set(); return
             if msg.strip().lower() in {"exit","quit","q"}: done.set(); return
-            history.append({"role":"user","content":msg}); history=agent_loop_fn(history,msg)
-        elif event_fn():
+            history.append({"role":"user","content":msg}); history=agent_loop(history,msg)
+        elif has_pending_runtime_event():
             for msg in message_bus.read_inbox("lead"):
                 history.append({"role":"user","content":f"【来自 {msg['from']} 的消息】\n{msg['content']}"})
-            history=agent_loop_fn(history,"", interactive_turn=False)
+            history=agent_loop(history,"", interactive_turn=False)
 
 if __name__ == '__main__':
     run_cli()

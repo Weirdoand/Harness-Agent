@@ -75,3 +75,6 @@
 | `is_persistent` | Boolean | **是否持久化**。如果为 True，则会将该任务数据序列化保存到本地硬盘；`CronManager` 启动时负责加载并恢复状态。 |
 | `has_pending_task` | Boolean | **是否有待交付的触发任务**。状态位，表示时间已到并进入队列，但还没发送给 LLM（防止重复调度）。 |
 | `last_trigger_time` | DateTime | **上次触发时间**。用于防抖，避免在一分钟内同一个 Cron 表达式被重复触发多次。 |
+# S15 交付语义
+
+Cron Prompt 注入 Lead 的同一对话 history。durable one-shot 使用 `pending_delivery` 持久化；模型调用成功后 ack 删除，失败 restore 重投。

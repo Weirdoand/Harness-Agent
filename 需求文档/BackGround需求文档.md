@@ -61,3 +61,6 @@ class BackgroundManager:
         """主动终止指定的后台任务"""
         pass
 ```
+# S15 兼容约束
+
+后台执行必须由调用方显式设置 `run_in_background=true`；默认同步。异步 Agent 无法完成权限确认时必须拒绝。
