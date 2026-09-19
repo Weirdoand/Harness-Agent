@@ -2,6 +2,9 @@ import os
 import json
 import uuid
 import inspect
+import ast
+import concurrent.futures
+import copy
 import subprocess
 from dataclasses import dataclass, field
 from dotenv import load_dotenv
@@ -13,14 +16,60 @@ import time
 import re
 import queue
 import signal
+import sys
+import hashlib
+import errno
+from contextlib import contextmanager
+SHIFT_TAB_TOKEN="SHIFT_TAB"
+AUTO_ALLOW_SENTINEL = object()
+class PermissionPolicy:
+    def __init__(self): self._lock=threading.RLock(); self._enabled=False
+    def toggle(self):
+        with self._lock: self._enabled=not self._enabled; return self._enabled
+    def snapshot(self):
+        with self._lock: return self._enabled
+    def set_for_test(self, value):
+        with self._lock: self._enabled=bool(value)
+PERMISSION_POLICY=PermissionPolicy()
 TURN_CONTEXT = threading.local()
 STDIN_LOCK = threading.Lock()
-def _console_input(prompt, input_fn=None):
+def _readline_keyed(prompt, key_reader, finish_on_auto_allow=False, output_fn=None):
+    out=output_fn or print; buf=[]; out(prompt, end="", flush=True)
+    while True:
+        ch=key_reader()
+        if ch in ("\x00","\xe0"):
+            if key_reader()=="\x0f": ch=SHIFT_TAB_TOKEN
+            else: continue
+        elif ch=="\x1b":
+            seq=key_reader()
+            if seq=="[" and key_reader()=="Z": ch=SHIFT_TAB_TOKEN
+        if ch==SHIFT_TAB_TOKEN:
+            enabled=PERMISSION_POLICY.toggle(); out(f"\n[权限模式] {'默认放行' if enabled else '逐项询问'}\n{prompt}{''.join(buf)}", end="", flush=True)
+            if enabled and finish_on_auto_allow: return AUTO_ALLOW_SENTINEL
+        elif ch in ("\r","\n"): out(); return ''.join(buf)
+        elif ch=="\x03": raise KeyboardInterrupt
+        elif ch=="\x1a": return None if not buf else ''.join(buf)
+        elif ch in ("\b","\x7f"):
+            if buf: buf.pop(); out("\b \b", end="", flush=True)
+        elif ch not in ("\t",): buf.append(ch); out(ch, end="", flush=True)
+
+def _console_input(prompt, input_fn=None, key_reader=None, finish_on_auto_allow=False):
     try:
         with STDIN_LOCK:
-            return (input_fn or input)(prompt)
+            if input_fn is not None: return input_fn(prompt)
+            if key_reader is not None: return _readline_keyed(prompt,key_reader,finish_on_auto_allow)
+            if os.name=="nt" and getattr(sys.stdin,"isatty",lambda:False)():
+                import msvcrt
+                return _readline_keyed(prompt,msvcrt.getwch,finish_on_auto_allow)
+            return input(prompt)
     except (EOFError, KeyboardInterrupt):
         return None
+
+def _confirm_or_auto_allow(prompt, input_fn=None):
+    if PERMISSION_POLICY.snapshot():
+        print("[权限模式] 需确认项：逐项询问/默认放行（Shift+Tab 切换）")
+        return AUTO_ALLOW_SENTINEL
+    return _console_input(prompt, finish_on_auto_allow=True)
 
 # ---------- 全局运行参数 ----------
 MAX_SUBAGENT_ITERATIONS = 30   # run_subagent 子代理最大迭代轮数
@@ -30,6 +79,27 @@ MAX_TOOL_RESULT_CHARS = 20000  # 单条工具结果追加进对话上下文的�
 class LLMCallResult:
     response: object
     partial_messages: list = field(default_factory=list)
+    token_usage: dict = field(default_factory=dict)
+
+@dataclass
+class TokenUsage:
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    def as_dict(self):
+        return {'prompt_tokens': self.prompt_tokens, 'completion_tokens': self.completion_tokens,
+                'total_tokens': self.total_tokens}
+    @classmethod
+    def from_response(cls, response):
+        u = getattr(response, 'usage', None)
+        if u is None: return cls()
+        def g(*names):
+            for n in names:
+                v = getattr(u, n, None) if not isinstance(u, dict) else u.get(n)
+                if v is not None: return int(v)
+            return 0
+        p=g('prompt_tokens','input_tokens'); c=g('completion_tokens','output_tokens'); t=g('total_tokens') or p+c
+        return cls(p,c,t)
 
 # 加载 .env 文件中的环境变量
 load_dotenv()
@@ -58,24 +128,27 @@ except Exception as e:
 
 
 def call_llm(messages, tools=None, model=None, max_tokens=None, client_override=None, sleep_fn=None):
-    chosen=model or MODEL; increased=False; partial_messages=[]
+    chosen=model or MODEL; increased=False; partial_messages=[]; usage=TokenUsage()
     api=client_override or client; pause=sleep_fn or time.sleep
     for attempt in range(4):
         try:
-            args={"model":chosen,"messages":messages,"tool_choice":"auto"}
+            args={"model":chosen,"messages":messages}
+            if tools is not None:
+                args["tool_choice"] = "auto"
             if tools is not None: args["tools"]=tools
             if max_tokens is not None: args["max_tokens"]=max_tokens
             response=api.chat.completions.create(**args)
+            u=TokenUsage.from_response(response); usage.prompt_tokens+=u.prompt_tokens; usage.completion_tokens+=u.completion_tokens; usage.total_tokens+=u.total_tokens
             reason=getattr(response.choices[0], "finish_reason", None)
             if reason=="length" and getattr(response.choices[0].message, "tool_calls", None):
-                return LLMCallResult(response, partial_messages)
+                return LLMCallResult(response, partial_messages, usage.as_dict())
             if reason=="length" and not increased:
                 increased=True; max_tokens=(max_tokens or 4096)*2
                 partial=response.choices[0].message
                 if getattr(partial, "content", None): partial_messages.append({"role":"assistant","content":partial.content})
                 messages=list(messages)+[{"role":"assistant","content":getattr(partial,"content","") or ""},{"role":"user","content":"请从中断处继续完成，不要重复已经输出的内容。"}]
                 continue
-            return LLMCallResult(response, partial_messages)
+            return LLMCallResult(response, partial_messages, usage.as_dict())
         except Exception as exc:
             status=getattr(exc, "status_code", None); text=str(exc).lower()
             if status==429 or "429" in text or "rate limit" in text:
@@ -2320,11 +2393,534 @@ def refresh_tool_pool():
         TEAM_FUNCTIONS["submit_plan"] = submit_plan
     TOOLS=[d for d in TOOLS if d["function"]["name"] != "manage_task"]
     FUNCTIONS.pop("manage_task", None)
+    if "WORKFLOW_TOOL_DESCRIPTION" in globals():
+        TOOLS.append(WORKFLOW_TOOL_DESCRIPTION)
+        FUNCTIONS["workflow"] = _workflow_handler
     return TOOLS, FUNCTIONS
 
 
 refresh_tool_pool()
-# --- 结构化工具调用定义 ---
+"""Small, isolated workflow interpreter and orchestration runtime."""
+
+
+import ast
+import concurrent.futures
+import copy
+import json
+import threading
+import uuid
+from dataclasses import dataclass
+
+
+class WorkflowError(ValueError):
+    """Raised for invalid workflow definitions or executions."""
+
+@dataclass
+class WorkflowAgentResult:
+    value: object
+    token_usage: dict = field(default_factory=dict)
+
+class LocalWorkflowTask:
+    def __init__(self, run_id, name, args, attempt=1, resumed_from_run_id=None, event_sink=None, persist_callback=None):
+        self.run_id=run_id; self.name=name; self.args=copy.deepcopy(args); self.attempt=attempt
+        self.resumed_from_run_id=resumed_from_run_id; self.status='running'; self.progress=[]; self.events=[]; self.persist_callback=persist_callback
+        self.result=None; self.error=None; self.output_file=None; self.agent_count=0; self.token_count=0
+        self.attempt_agent_count=0; self.attempt_token_count=0; self._sequence=0; self._lock=threading.RLock(); self.event_sink=event_sink
+    def _emit(self, typ, **data):
+        with self._lock:
+            self._sequence += 1; ev={'sequence':self._sequence,'type':typ,'run_id':self.run_id,'workflow':self.name,'status':self.status,'timestamp':time.time(),**data}; self.events.append(ev)
+        try:
+            if self.event_sink: self.event_sink(ev)
+        except Exception: pass
+        return ev
+    def start(self): self._emit('task_started',run_id=self.run_id,name=self.name,attempt=self.attempt)
+    def progress_event(self, ptype, **data):
+        rec={'type':ptype,**data}; self.progress.append(rec); self._emit('task_progress',progress_type=ptype,**data)
+    def agent_started(self,label=None,phase=None):
+        with self._lock:
+            self.agent_count+=1; self.attempt_agent_count+=1
+            if self.persist_callback: self.persist_callback(self)
+        self.progress_event('agent_started',label=label,phase=phase)
+    def add_usage(self, usage):
+        n=int((usage or {}).get('total_tokens',0) or ((usage or {}).get('input_tokens',0)+(usage or {}).get('output_tokens',0)))
+        with self._lock:
+            self.token_count+=n; self.attempt_token_count+=n
+            if self.persist_callback: self.persist_callback(self)
+    def finish(self, result, output_file=None):
+        self.status='completed'; self.result=result; self.output_file=output_file; self._emit('task_notification',status=self.status,output_file=output_file,agent_count=self.agent_count,token_count=self.token_count,attempt_agent_count=self.attempt_agent_count,attempt_token_count=self.attempt_token_count)
+    def fail(self, error, output_file=None):
+        self.status='failed'; self.error=str(error); self.output_file=output_file; self._emit('task_notification',status=self.status,error=self.error,output_file=output_file,agent_count=self.agent_count,token_count=self.token_count,attempt_agent_count=self.attempt_agent_count,attempt_token_count=self.attempt_token_count)
+    def as_dict(self): return {'run_id':self.run_id,'status':self.status,'result':self.result,'error':self.error,'output_file':self.output_file,'agent_count':self.agent_count,'token_count':self.token_count,'attempt_agent_count':self.attempt_agent_count,'attempt_token_count':self.attempt_token_count,'events':self.events}
+
+
+SAFE_BUILTINS = {
+    "len": len,
+    "range": range,
+    "str": str,
+    "int": int,
+    "list": list,
+    "dict": dict,
+    "min": min,
+    "max": max,
+    "sorted": sorted,
+}
+
+
+def validate_schema(value, schema, path="args"):
+    if not isinstance(schema, dict):
+        raise WorkflowError("schema must be an object")
+    schema_type = schema.get("type")
+    valid_types = {"object", "array", "string", "number", "integer", "boolean", "null"}
+    if schema_type not in valid_types:
+        raise WorkflowError(f"{path}: invalid schema type")
+    checks = {
+        "object": isinstance(value, dict),
+        "array": isinstance(value, list),
+        "string": isinstance(value, str),
+        "number": isinstance(value, (int, float)) and not isinstance(value, bool),
+        "integer": isinstance(value, int) and not isinstance(value, bool),
+        "boolean": isinstance(value, bool),
+        "null": value is None,
+    }
+    if not checks[schema_type]:
+        raise WorkflowError(f"{path}: expected {schema_type}")
+    if schema_type == "object":
+        properties = schema.get("properties", {})
+        if not isinstance(properties, dict):
+            raise WorkflowError(f"{path}.properties: expected object")
+        for key in schema.get("required", []):
+            if key not in value:
+                raise WorkflowError(f"{path}.{key}: required")
+        for key, child in properties.items():
+            if key in value:
+                validate_schema(value[key], child, f"{path}.{key}")
+    if schema_type == "array":
+        for index, item in enumerate(value):
+            validate_schema(item, schema.get("items"), f"{path}[{index}]")
+    return True
+
+
+def validate_schema_definition(schema, path="schema"):
+    """Validate schema metadata itself, without treating required fields as data."""
+    if not isinstance(schema, dict):
+        raise WorkflowError(f"{path}: schema must be an object")
+    schema_type = schema.get("type")
+    if schema_type not in {"object", "array", "string", "number", "integer", "boolean", "null"}:
+        raise WorkflowError(f"{path}.type: invalid")
+    if "required" in schema and (
+        not isinstance(schema["required"], list)
+        or any(not isinstance(item, str) for item in schema["required"])
+    ):
+        raise WorkflowError(f"{path}.required: expected string list")
+    if "properties" in schema:
+        if not isinstance(schema["properties"], dict):
+            raise WorkflowError(f"{path}.properties: expected object")
+        for key, child in schema["properties"].items():
+            if not isinstance(key, str):
+                raise WorkflowError(f"{path}.properties: keys must be strings")
+            validate_schema_definition(child, f"{path}.properties.{key}")
+    if "items" in schema:
+        validate_schema_definition(schema["items"], f"{path}.items")
+
+
+@dataclass(frozen=True)
+class WorkflowDefinition:
+    name: str
+    description: str
+    parameters: dict
+    phases: tuple
+    code: str
+    compiled: object
+
+
+class _Miss: pass
+MISS = _Miss()
+
+def _stable_key(kind, label, prompt, schema):
+    basis = f"{kind}|{label or ''}|{prompt}|{json.dumps(schema, sort_keys=True, separators=(',',':'), ensure_ascii=False, allow_nan=False)}"
+    return f"{kind}-{int(hashlib.sha256(basis.encode()).hexdigest(), 16) % 10**10:010d}"
+
+class WorkflowJournal:
+    def __init__(self, path, load=True):
+        self.path=Path(path); self.cache={}; self.entries=[]; self._lock=threading.RLock()
+        if load and self.path.exists():
+            raw=self.path.read_bytes(); lines=raw.splitlines(keepends=True)
+            good=0
+            for i,line in enumerate(lines):
+                if not line.endswith(b'\n'):
+                    if i != len(lines)-1: raise WorkflowError('invalid journal')
+                    self.path.write_bytes(raw[:good]); break
+                try: obj=json.loads(line.decode())
+                except Exception as exc: raise WorkflowError('invalid journal') from exc
+                if not isinstance(obj,dict) or not isinstance(obj.get('key'),str) or 'value' not in obj: raise WorkflowError('invalid journal')
+                with self._lock:
+                    if obj['key'] in self.cache and self.cache[obj['key']] != obj['value']: raise WorkflowError('conflicting journal entry')
+                    self.cache[obj['key']]=copy.deepcopy(obj['value']); self.entries.append(obj); good += len(line)
+        self._f=open(self.path,'a+',encoding='utf-8')
+    def cached(self,key):
+        with self._lock: return copy.deepcopy(self.cache[key]) if key in self.cache else MISS
+    def record(self,key,value):
+        with self._lock:
+            if key in self.cache:
+                if self.cache[key]!=value: raise WorkflowError('conflicting journal entry')
+                return
+            payload=json.dumps({'key':key,'value':value},ensure_ascii=False,separators=(',',':'),allow_nan=False)+'\n'
+            self._f.write(payload); self._f.flush(); os.fsync(self._f.fileno())
+            self.cache[key]=copy.deepcopy(value); self.entries.append({'key':key,'value':copy.deepcopy(value)})
+    def close(self):
+        with self._lock: self._f.close()
+
+class ExecutionState:
+    def __init__(self, runner, runtime, workflow, phases, depth=0, sink=None, reporter=None, journal=None, task=None):
+        self.runner = runner
+        self._runtime = runtime
+        self._workflow = workflow
+        self._phases = tuple(phases)
+        self._depth = depth
+        self._sink = sink
+        self._reporter = reporter
+        self._lock = threading.RLock()
+        self.journal = []
+        self._workflow_journal = journal
+        self._singleflight = runtime._singleflight
+        self.current_phase = None
+        self.task = task
+
+    def _event(self, event, **data):
+        record = {
+            "workflow": self._workflow,
+            "phase": self.current_phase,
+            "event": event,
+            **data,
+        }
+        with self._lock:
+            self.journal.append(record)
+        if self._sink:
+            try: self._sink(record)
+            except Exception: pass
+        if self._reporter:
+            self._reporter(record)
+
+    def phase(self, title):
+        if title not in self._phases:
+            raise WorkflowError(f"unknown phase: {title}")
+        self.current_phase = title
+        self._event("phase", title=title)
+        if self.task: self.task.progress_event('phase', title=title)
+
+    def log(self, message):
+        self._event("log", message=str(message))
+        if self.task: self.task.progress_event('log', message=str(message))
+
+    def agent(self, prompt, options=None, **kwargs):
+        options = {**(options or {}), **kwargs}
+        allowed = {"schema", "label", "phase"}
+        if set(options) - allowed:
+            raise WorkflowError("invalid agent options")
+        if options.get("phase", self.current_phase) not in self._phases:
+            if options.get("phase", self.current_phase) is not None:
+                raise WorkflowError("unknown phase")
+        label = options.get("label")
+        phase = options.get("phase", self.current_phase)
+        if phase is not None and "phase" not in options:
+            options["phase"] = phase
+        schema=options.get('schema'); key=_stable_key('agent',label,str(prompt),schema)
+        cached=self._workflow_journal.cached(key) if self._workflow_journal else MISS
+        if cached is not MISS:
+            self._event('workflow_agent',label=label,status='cached',key=key)
+            if self.task: self.task.progress_event('agent_cached',label=label,phase=phase,key=key)
+            if schema is not None: validate_schema(cached, schema, 'agent.result')
+            return cached
+        call_id = uuid.uuid4().hex; self._event("agent_start", call_id=call_id, label=label, phase=phase)
+        try:
+            with self._singleflight_lock(key):
+                cached=self._workflow_journal.cached(key) if self._workflow_journal else MISS
+                if cached is not MISS:
+                    self._event('workflow_agent',label=label,status='cached',key=key)
+                    if self.task: self.task.progress_event('agent_cached',label=label,phase=phase,key=key)
+                    if schema is not None: validate_schema(cached, schema, 'agent.result')
+                    return cached
+                if self.task: self.task.agent_started(label, phase)
+                result = self.runner(str(prompt), **options)
+                usage = result.token_usage if isinstance(result, WorkflowAgentResult) else {}
+                if isinstance(result, WorkflowAgentResult): result = result.value
+                if self.task: self.task.add_usage(usage)
+                if "schema" in options:
+                    if isinstance(result, str) and options["schema"].get("type") != "string":
+                        result = json.loads(result)
+                    validate_schema(result, options["schema"], "agent.result")
+                else:
+                    json.dumps(result, allow_nan=False)
+                if self._workflow_journal: self._workflow_journal.record(key,result)
+        except (json.JSONDecodeError, TypeError) as exc:
+            self._event("agent_end", call_id=call_id, label=label, status="error")
+            raise WorkflowError("agent result is not valid JSON") from exc
+        except Exception:
+            self._event("agent_end", call_id=call_id, label=label, status="error")
+            raise
+        self._event("agent_end", call_id=call_id, label=label, status="ok")
+        return result
+
+    @contextmanager
+    def _singleflight_lock(self,key):
+        with self._runtime._lock:
+            lock=self._singleflight.setdefault(key, threading.Lock())
+        with lock: yield
+
+    def parallel(self, thunks):
+        thunks = list(thunks)
+        results = [None] * len(thunks)
+        errors = []
+        self._event("parallel_start", count=len(thunks))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, min(32, len(thunks)))) as pool:
+            futures = [pool.submit(thunk) for thunk in thunks]
+            for index, future in enumerate(futures):
+                try:
+                    results[index] = future.result()
+                except Exception as exc:
+                    errors.append({"index": index, "error": str(exc)})
+        self._event("parallel_end", errors=errors)
+        if errors:
+            raise WorkflowError(f"parallel errors: {errors}")
+        return results
+
+    def pipeline(self, items, *stages):
+        items = list(items)
+        errors = []
+
+        def run_item(index):
+            value = items[index]
+            for stage_index, stage in enumerate(stages):
+                try:
+                    value = stage(value)
+                except Exception as exc:
+                    return {"index": index, "stage": stage_index, "error": str(exc)}
+            return value
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, min(32, len(items)))) as pool:
+            futures = [pool.submit(run_item, index) for index in range(len(items))]
+            results = [future.result() for future in futures]
+        for result in results:
+            if isinstance(result, dict) and {"index", "stage", "error"} <= set(result):
+                errors.append(result)
+        self._event("pipeline_end", count=len(items), errors=errors)
+        if errors:
+            raise WorkflowError(f"pipeline errors: {errors}")
+        return results
+
+    def workflow(self, name, args=None):
+        if self._depth >= 1:
+            raise WorkflowError("nested workflows are limited to one level")
+        result, child = self._runtime.run(
+            name,
+            args,
+            runner=self.runner,
+            depth=1,
+            sink=self._sink,
+            reporter=self._reporter, journal=self._workflow_journal,
+            runner_is_limited=True,
+            task=self.task,
+        )
+        with self._lock:
+            self.journal.extend(child.journal)
+        return result
+
+
+class MockAgentRunner:
+    def __init__(self, result=None):
+        self.calls = []
+        self.result = result
+
+    def __call__(self, prompt, **options):
+        self.calls.append({"prompt": prompt, **options})
+        if callable(self.result):
+            return self.result(prompt, **options)
+        return self.result
+
+
+class WorkflowRuntime:
+    def __init__(self, registry=None, agent_runner=None, max_agent_concurrency=8):
+        self.registry = registry if registry is not None else {}
+        self.agent_runner = agent_runner
+        self._lock = threading.RLock()
+        self.agent_semaphore = threading.BoundedSemaphore(max_agent_concurrency)
+        self._singleflight = {}
+
+    def _compile(self, code, name):
+        try:
+            tree = ast.parse(code, mode="exec")
+        except SyntaxError as exc:
+            raise WorkflowError("invalid workflow syntax") from exc
+        if len(tree.body) != 1 or not isinstance(tree.body[0], ast.FunctionDef):
+            raise WorkflowError("workflow must only define run")
+        function = tree.body[0]
+        if function.name != "run" or len(function.args.args) != 2:
+            raise WorkflowError("workflow must define run(state, args)")
+        if function.args.vararg or function.args.kwarg or function.args.kwonlyargs:
+            raise WorkflowError("run may only accept state and args")
+        forbidden = (ast.Import, ast.ImportFrom, ast.While, ast.With, ast.ClassDef,
+                     ast.Global, ast.Nonlocal, ast.Delete, ast.AsyncFunctionDef)
+        allowed_attrs = {"agent", "parallel", "pipeline", "phase", "log", "workflow"}
+        safe_calls = set(SAFE_BUILTINS)
+        for node in ast.walk(tree):
+            if isinstance(node, forbidden):
+                raise WorkflowError("forbidden syntax")
+            if isinstance(node, ast.Attribute):
+                if not (isinstance(node.value, ast.Name) and node.value.id == "state"
+                        and node.attr in allowed_attrs):
+                    raise WorkflowError("only state primitives may be accessed")
+            if isinstance(node, ast.Assign) and any(isinstance(target, ast.Attribute)
+                                                    for target in node.targets):
+                raise WorkflowError("attribute assignment forbidden")
+            if isinstance(node, ast.Name) and node.id in {
+                "open", "eval", "exec", "compile", "__import__", "input", "os", "sys",
+            }:
+                raise WorkflowError("forbidden name")
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    if node.func.id not in safe_calls:
+                        raise WorkflowError("bare call forbidden")
+                elif not (
+                    isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "state"
+                    and node.func.attr in allowed_attrs
+                ):
+                    raise WorkflowError("calls must use safe builtins or state primitives")
+        return compile(tree, f"<workflow:{name}>", "exec")
+
+    def register(self, name, description, phases, code, parameters=None):
+        if not isinstance(name, str) or not name:
+            raise WorkflowError("workflow name is required")
+        if not isinstance(description, str) or not description:
+            raise WorkflowError("workflow description is required")
+        if not isinstance(phases, (list, tuple)) or any(not isinstance(p, str) or not p for p in phases):
+            raise WorkflowError("phases must be non-empty strings")
+        parameters = {"type": "object"} if parameters is None else parameters
+        validate_schema_definition(parameters, "parameters")
+        compiled = self._compile(code, name)
+        definition = WorkflowDefinition(
+            name, description, copy.deepcopy(parameters), tuple(phases), code, compiled
+        )
+        with self._lock:
+            if name in self.registry:
+                raise WorkflowError("workflow name conflict")
+            self.registry[name] = definition
+        return definition
+
+    def run(self, name, args=None, *, runner=None, depth=0, sink=None, reporter=None, runner_is_limited=False, journal=None, task=None):
+        with self._lock:
+            definition = self.registry.get(name)
+        if definition is None:
+            raise WorkflowError(f"unknown workflow: {name}")
+        args = {} if args is None else copy.deepcopy(args)
+        validate_schema(args, definition.parameters)
+        runner = runner or self.agent_runner
+        if runner is None:
+            raise WorkflowError("agent runner required")
+
+        def limited_runner(prompt, **options):
+            with self.agent_semaphore:
+                return runner(prompt, **options)
+
+        state = ExecutionState(runner if runner_is_limited else limited_runner, self, name, definition.phases,
+                               depth, sink, reporter, journal, task)
+        namespace = {"__builtins__": SAFE_BUILTINS}
+        exec(definition.compiled, namespace)
+        return namespace["run"](state, args), state
+
+
+WORKFLOW_TOOL_DESCRIPTION={"type":"function","function":{"name":"workflow","description":"运行工作流","parameters":{"type":"object","properties":{"name":{"type":"string"},"args":{"type":"object"},"resume_from_run_id":{"type":"string"}},"required":["name","args"],"additionalProperties":False}}}
+WORKFLOWS = WorkflowRuntime()
+WORKFLOW_RUNTIME_DIR = Path(__file__).resolve().parent / 's16_workflow_runtime' / '.runtime'
+class _RunLock:
+    def __init__(self,path):
+        self.path=Path(path); self.f=None
+    def __enter__(self):
+        self.path.parent.mkdir(parents=True,exist_ok=True)
+        self.f=open(self.path,'a+b')
+        try:
+            if os.name=='nt':
+                import msvcrt
+                self.f.seek(0, os.SEEK_END)
+                if self.f.tell() == 0:
+                    self.f.write(b'0'); self.f.flush()
+                self.f.seek(0); msvcrt.locking(self.f.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl; fcntl.flock(self.f.fileno(), fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except (OSError, IOError) as e:
+            self.f.close();
+            if getattr(e,'errno',None) in (errno.EACCES,errno.EAGAIN,errno.EDEADLK): raise WorkflowError('workflow run is locked')
+            raise
+        return self
+    def __exit__(self,*exc):
+        try:
+            if os.name=='nt':
+                import msvcrt; self.f.seek(0); msvcrt.locking(self.f.fileno(),msvcrt.LK_UNLCK,1)
+            else:
+                import fcntl; fcntl.flock(self.f.fileno(),fcntl.LOCK_UN)
+        finally: self.f.close()
+def _atomic_json(path,obj):
+    path=Path(path); tmp=path.with_name(path.name+'.tmp-'+uuid.uuid4().hex)
+    with open(tmp,'w',encoding='utf-8') as f: json.dump(obj,f,ensure_ascii=False); f.flush(); os.fsync(f.fileno())
+    os.replace(tmp,path)
+def register_workflow(name, description, phases, code, parameters=None):
+    return WORKFLOWS.register(name,description,phases,code,parameters)
+def _workflow_real_runner(prompt, **opts):
+    r=call_llm([{"role":"user","content":str(prompt)}],tools=None)
+    return WorkflowAgentResult(r.response.choices[0].message.content, getattr(r,'token_usage',{}))
+def run_workflow(name,args=None,runner=None,resume_from_run_id=None,*,event_sink=None):
+    args={} if args is None else copy.deepcopy(args); root=Path(WORKFLOW_RUNTIME_DIR); root.mkdir(parents=True,exist_ok=True)
+    if resume_from_run_id:
+        rid=resume_from_run_id
+        if not re.fullmatch(r'[0-9a-f]{32}',rid): raise WorkflowError('invalid run_id')
+        snap=root/(rid+'.json'); out=root/(rid+'.output.json'); jp=root/(rid+'.journal.jsonl')
+        if not snap.exists(): raise WorkflowError('unknown run_id')
+    else:
+        rid=uuid.uuid4().hex; lockpath=root/(rid+'.lock')
+        try: fd=os.open(lockpath,os.O_CREAT|os.O_EXCL|os.O_WRONLY); os.close(fd)
+        except FileExistsError: raise WorkflowError('run id collision')
+        snap=root/(rid+'.json'); out=root/(rid+'.output.json'); jp=root/(rid+'.journal.jsonl')
+    lockpath=root/(rid+'.lock')
+    with _RunLock(lockpath):
+        if resume_from_run_id:
+            try: rec=json.loads(snap.read_text(encoding='utf-8'))
+            except Exception as e: raise WorkflowError('invalid snapshot') from e
+            required={'version','run_id','name','args','status','attempt','started_at'}
+            if (not required.issubset(rec) or rec.get('version') != 1 or rec.get('run_id')!=rid
+                    or rec.get('name')!=name or rec.get('args')!=args
+                    or rec.get('status') not in {'running','failed','completed'}
+                    or not isinstance(rec.get('attempt'),int)):
+                raise WorkflowError('invalid snapshot or resume mismatch')
+            if out.exists():
+                try: json.loads(out.read_text(encoding='utf-8'))
+                except Exception as e: raise WorkflowError('invalid output') from e
+            # Journal validation must complete before changing the snapshot.
+        else:
+            now=time.time(); rec={'version':1,'run_id':rid,'name':name,'args':args,'status':'running','attempt':1,'started_at':now,'created_at':now,'updated_at':now,'agent_count':0,'token_count':0}
+            _atomic_json(snap,rec)
+        journal=WorkflowJournal(jp)
+        if resume_from_run_id:
+            rec.update(status='running',attempt=rec['attempt']+1,updated_at=time.time()); rec.pop('error',None); _atomic_json(snap,rec)
+        def persist_counts(t):
+            rec.update(agent_count=t.agent_count, token_count=t.token_count, updated_at=time.time()); _atomic_json(snap,rec)
+        task=LocalWorkflowTask(rid,name,args,rec['attempt'],rid if resume_from_run_id else None,event_sink,persist_counts)
+        task.agent_count=int(rec.get('agent_count',0)); task.token_count=int(rec.get('token_count',0)); task.start()
+        try:
+            result,state=WORKFLOWS.run(name,args,runner=runner or _workflow_real_runner,journal=journal,task=task)
+            _atomic_json(out,result); rec.update(status='completed',finished_at=time.time(),updated_at=time.time(),agent_count=task.agent_count,token_count=task.token_count); _atomic_json(snap,rec)
+            task.finish(result, str(out))
+            return {'run_id':rid,'status':'completed','result':result,'journal':state.journal,'output_file':str(out),'agent_count':task.agent_count,'token_count':task.token_count,'events':task.events,'task_status':task.status,**({'resumed_from_run_id':rid} if resume_from_run_id else {})}
+        except Exception as e:
+            rec.update(status='failed',error=str(e),finished_at=time.time(),updated_at=time.time(),agent_count=task.agent_count,token_count=task.token_count); _atomic_json(snap,rec)
+            task.fail(e,str(out))
+            raise
+        finally:
+            journal.close()
+def _workflow_handler(**kwargs):
+    if set(kwargs)-{"name","args","resume_from_run_id"} or "name" not in kwargs or "args" not in kwargs: raise WorkflowError("workflow accepts only name, args, resume_from_run_id")
+    return json.dumps(run_workflow(kwargs["name"],kwargs["args"],resume_from_run_id=kwargs.get("resume_from_run_id")),ensure_ascii=False,default=str)
+refresh_tool_pool()
 @dataclass
 class ToolCall:
     """
@@ -2540,7 +3136,8 @@ def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
     def _ask_user(question: str) -> bool:
         """交互式确认；无可用终端(EOFError)时默认拒绝，避免权限校验 fail-open。"""
         try:
-            answer = _console_input(question)
+            answer = _confirm_or_auto_allow(question)
+            if answer is AUTO_ALLOW_SENTINEL: return True
             return answer is not None and answer.strip().lower() == "yes"
         except (EOFError, KeyboardInterrupt):
             print("\033[31m[权限校验] 无交互终端，无法完成确认，操作已默认拒绝。\033[0m")
@@ -2554,7 +3151,7 @@ def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
         return False, "执行失败：Teammate 尚未认领带 Worktree 的任务，禁止文件或 Shell 操作。"
     if agent_name != "lead" and (tool.name in {"run_bash","bash"} and tool.args.get("run_in_background") is True or tool.name.startswith("mcp__")):
         return False, "执行失败：异步 Agent 不允许执行需要确认的 Bash/MCP 工具。"
-    if tool.name in ["run_bash", "write_file", "edit_file"] and agent_name in plan_gates:
+    if tool.name in ["run_bash", "bash", "write_file", "edit_file"] and agent_name in plan_gates:
         status = plan_gates[agent_name]
         if status not in ["approved", "not_required"]:
             return False, f"执行失败：你的状态为 {status}，工具 {tool.name} 被闸门拦截。请务必调用 submit_plan 提交执行计划给 Lead 审批！"
@@ -2567,6 +3164,8 @@ def hook_check_tool_permission(tool: ToolCall, **kwargs) -> tuple[bool, str]:
             return False, "执行失败：系统已拦截高危操作（如格式化磁盘、删除系统核心文件等）。"
 
         if True:
+            if PERMISSION_POLICY.snapshot():
+                print(f"[权限自动放行] {tool.name}: {_summarize_tool_args(tool)}")
             title, purpose = _tool_title_and_purpose(tool.name)
             question = (
                 f"\n\033[36m[权限确认] {title}\033[0m\n"
@@ -2695,7 +3294,9 @@ def execute_function(tool: ToolCall, available_funcs: dict, messages: list) -> s
         else:
             try:
                 # 过滤掉 background 参数，避免传入不支持该参数的函数
-                call_args = {k: v for k, v in tool.args.items() if k not in {"background", "run_in_background"}}
+                call_args = dict(tool.args)
+                if tool.name in {"bash", "run_bash"}:
+                    call_args = {k: v for k, v in call_args.items() if k not in {"background", "run_in_background"}}
                 result = str(func_to_call(**call_args))
             except Exception as e:
                 result = f"工具 {tool.name} 执行出错: {str(e)}"
@@ -2871,7 +3472,7 @@ def agent_loop(messages: list = None, latest_user_input: str = "", interactive_t
     :param messages: 对话消息队列（在外层循环中维护并追加用户消息）
     :param latest_user_input: 最近一轮玩家发送的对话内容（用于日志或Hook记录）
     """
-    previous_interactive = getattr(TURN_CONTEXT, "interactive", True)
+    previous_interactive = getattr(TURN_CONTEXT, "interactive", False)
     TURN_CONTEXT.interactive = interactive_turn
     if messages is None:
         messages = []
@@ -2976,6 +3577,7 @@ def has_pending_runtime_event():
 def run_cli(input_fn=None, agent_loop_fn=None, event_fn=None, start_services_fn=None, poll_interval=.2):
     """Queue-driven CLI entry; automatic events share the Lead history."""
     (start_services_fn or cron_manager.start_services)(); print("=== LLM 终端助手已启动 ===")
+    print(f"[权限模式] {'默认放行' if PERMISSION_POLICY.snapshot() else '逐项询问'}（Shift+Tab 切换）")
     agent_loop_fn = agent_loop_fn or agent_loop; event_fn = event_fn or has_pending_runtime_event
     threading.current_thread().name="lead"; history=[]; user_queue=queue.Queue(); ready=threading.Event(); done=threading.Event()
     input_pending=False; sentinel=object()
@@ -2994,6 +3596,8 @@ def run_cli(input_fn=None, agent_loop_fn=None, event_fn=None, start_services_fn=
         if msg is not None:
             input_pending=False
             if msg is sentinel: done.set(); return
+            if msg.strip()=="/permission-toggle":
+                print(f"[权限模式] {'默认放行' if PERMISSION_POLICY.toggle() else '逐项询问'}（Shift+Tab 切换）"); continue
             if msg.strip().lower() in {"exit","quit","q"}: done.set(); return
             history.append({"role":"user","content":msg}); history=agent_loop_fn(history,msg)
         elif event_fn():

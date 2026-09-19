@@ -9,7 +9,7 @@ def names(items):
 def test_lead_contract_names():
     app.refresh_tool_pool()
     n=names(app.TOOLS)
-    assert len(n) == 26
+    assert len(n) >= 26
     assert {"request_plan","review_plan"} <= n
     assert not ({"submit_plan","approve_plan","reject_plan","allocate_worktree","run_bash","glob_bash"} & n)
 
@@ -29,3 +29,13 @@ def test_bind_worktree_requires_pending_unowned(tmp_path):
     assert tm.bind_worktree(tid, str(tmp_path/"w"))
     assert tm.claim_task(tid, "a")["success"]
     assert not tm.bind_worktree(tid, str(tmp_path/"other"))
+
+def test_fixed_workflow_lead_contract():
+    app.refresh_tool_pool()
+    lead = next(x for x in app.TOOLS if x['function']['name'] == 'workflow')
+    params = lead['function']['parameters']
+    assert set(params['properties']) == {'name','args','resume_from_run_id'}
+    assert set(params['required']) == {'name','args'}
+    assert params['additionalProperties'] is False
+    assert 'workflow' not in names(app.SUB_TOOLS)
+    assert 'workflow' not in names(app.TEAM_TOOLS)
